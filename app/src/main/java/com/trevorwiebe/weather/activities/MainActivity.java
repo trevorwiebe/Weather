@@ -5,6 +5,9 @@ import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
 import android.net.ConnectivityManager;
@@ -23,6 +26,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -31,6 +35,7 @@ import android.widget.Toast;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.trevorwiebe.weather.R;
 import com.trevorwiebe.weather.utils.LoadWeatherData;
 import com.trevorwiebe.weather.utils.Utility;
@@ -38,6 +43,7 @@ import com.trevorwiebe.weather.utils.Utility;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Calendar;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished {
@@ -48,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private int mCurrentColor;
     private BottomSheetBehavior mBottomSheetBehavior;
     private HashMap<String, String> mWeatherMap = new HashMap<>();
+    private boolean isSunUp;
 
     // Widgets
     private FrameLayout mBaseLayout;
@@ -67,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private TextView mCityAndState;
     private TextView mLastUpdated;
     private TextView mHumidity;
+    private ImageView mWeatherImage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCityAndState = findViewById(R.id.city_and_state);
         mLastUpdated = findViewById(R.id.last_updated);
         mHumidity = findViewById(R.id.humidity);
+        mWeatherImage = findViewById(R.id.weather_image);
 
         mBottomSheet.setVisibility(View.INVISIBLE);
 
@@ -129,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         mGrantPermissionLayout.setVisibility(View.INVISIBLE);
         mErrorLayout.setVisibility(View.INVISIBLE);
+        mWeatherImage.setVisibility(View.INVISIBLE);
 
 
         if (savedInstanceState != null) {
@@ -239,6 +249,24 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         String longitude = Double.toString(location.getLongitude());
         String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
         new LoadWeatherData(MainActivity.this).execute(url);
+
+        com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
+        SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
+
+        Calendar calendar = Calendar.getInstance();
+
+        Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
+        Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
+
+        long sunsetMillis = officialSunset.getTimeInMillis();
+        long sunriseMillis = officialSunrise.getTimeInMillis();
+        long currentTime = calendar.getTimeInMillis();
+
+        if (sunriseMillis < currentTime && sunsetMillis > currentTime) {
+            isSunUp = true;
+        } else {
+            isSunUp = false;
+        }
     }
 
     private HashMap<String, String> parseData(String rawData) {
@@ -361,6 +389,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCurrentTemp.setText(mWeatherMap.get("temp_f") + (char) 0x00B0 + "F");
         mCurrentCondition.setText(mWeatherMap.get("weather"));
 
+        int drawable = chooseWeatherImage(mWeatherMap.get("weather"));
+        Resources resources = getResources();
+        Bitmap weather_icon = BitmapFactory.decodeResource(resources, drawable);
+        mWeatherImage.setImageBitmap(weather_icon);
+        mWeatherImage.setVisibility(View.VISIBLE);
+
         // set more info text views
         mWind.append("   " + mWeatherMap.get("wind_str"));
         mDewpoint.append("   " + mWeatherMap.get("dewpoint") + (char) 0x00B0 + "F");
@@ -383,6 +417,122 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         // hide the loading indicator
         mLoadingIndicator.setVisibility(View.INVISIBLE);
+    }
+
+    private int chooseWeatherImage(String weather) {
+        if (isSunUp) {
+            switch (weather) {
+                case "Overcast":
+                    return R.drawable.cloudy;
+                case "Cloudy":
+                    return R.drawable.cloudy;
+                case "Clear":
+                    return R.drawable.sun;
+                case "Sunny":
+                    return R.drawable.sun;
+                case "Flurries":
+                    return R.drawable.snow;
+                case "Freezing Rain":
+                    return R.drawable.freezing_rain;
+                case "Sleet":
+                    return R.drawable.freezing_rain;
+                case "Snow":
+                    return R.drawable.snow;
+                case "Chance of Snow":
+                    return R.drawable.snow;
+                case "Chance of Flurries":
+                    return R.drawable.snow;
+                case "Chance of Freezing Rain":
+                    return R.drawable.freezing_rain;
+                case "Chance of Sleet":
+                    return R.drawable.freezing_rain;
+                case "Chance of Thunderstorms":
+                    return R.drawable.thunderstorm;
+                case "Chance of a Thunderstorm":
+                    return R.drawable.thunderstorm;
+                case "Thunderstorm":
+                    return R.drawable.thunderstorm;
+                case "Thunderstorms":
+                    return R.drawable.thunderstorm;
+                case "Fog":
+                    return R.drawable.cloudy;
+                case "Haze":
+                    return R.drawable.cloudy;
+                case "Chance of Rain":
+                    return R.drawable.rain;
+                case "Chance Rain":
+                    return R.drawable.rain;
+                case "Rain":
+                    return R.drawable.rain;
+                case "Partly Cloudy":
+                    return R.drawable.partly_cloudy_sun;
+                case "Mostly Cloudy":
+                    return R.drawable.mostly_cloudy_sun;
+                case "Mostly Sunny":
+                    return R.drawable.partly_cloudy_sun;
+                case "Partly Sunny":
+                    return R.drawable.mostly_cloudy_sun;
+                case "Scattered Clouds":
+                    return R.drawable.partly_cloudy_sun;
+                default:
+                    return R.drawable.unknown;
+            }
+        } else {
+            switch (weather) {
+                case "Overcast":
+                    return R.drawable.cloudy;
+                case "Cloudy":
+                    return R.drawable.cloudy;
+                case "Clear":
+                    return R.drawable.moon;
+                case "Flurries":
+                    return R.drawable.snow;
+                case "Freezing Rain":
+                    return R.drawable.freezing_rain;
+                case "Sleet":
+                    return R.drawable.freezing_rain;
+                case "Snow":
+                    return R.drawable.snow;
+                case "Chance of Snow":
+                    return R.drawable.snow;
+                case "Chance of Flurries":
+                    return R.drawable.snow;
+                case "Chance of Freezing Rain":
+                    return R.drawable.freezing_rain;
+                case "Chance of Sleet":
+                    return R.drawable.freezing_rain;
+                case "Chance of Thunderstorms":
+                    return R.drawable.thunderstorm;
+                case "Chance of a Thunderstorm":
+                    return R.drawable.thunderstorm;
+                case "Thunderstorm":
+                    return R.drawable.thunderstorm;
+                case "Thunderstorms":
+                    return R.drawable.thunderstorm;
+                case "Fog":
+                    return R.drawable.cloudy;
+                case "Haze":
+                    return R.drawable.cloudy;
+                case "Chance of Rain":
+                    return R.drawable.rain;
+                case "Chance Rain":
+                    return R.drawable.rain;
+                case "Rain":
+                    return R.drawable.rain;
+                case "Mostly Cloudy":
+                    return R.drawable.mostly_cloudy_moon;
+                case "Partly Cloudy":
+                    return R.drawable.partly_cloudy_moon;
+                case "Mostly Sunny":
+                    return R.drawable.partly_cloudy_moon;
+                case "Partly Sunny":
+                    return R.drawable.mostly_cloudy_moon;
+                case "Scattered Clouds":
+                    return R.drawable.partly_cloudy_moon;
+                default:
+                    return R.drawable.unknown;
+            }
+        }
     }
 
 }

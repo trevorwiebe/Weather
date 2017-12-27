@@ -21,13 +21,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
+        <ImageView
+            android:id="@+id/weather_image"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/sun"
+            android:contentDescription="@null"
+            android:layout_width="175dp"
+            android:layout_height="175dp"/>
+
         <TextView
             android:id="@+id/current_condition"
             android:textSize="25sp"
             android:gravity="center_horizontal"
             android:textColor="@android:color/white"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
