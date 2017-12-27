@@ -33,6 +33,7 @@
 
     </LinearLayout>
 
+
     <ProgressBar
         android:id="@+id/loading_indicator"
         android:layout_gravity="center"
