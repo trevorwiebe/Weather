@@ -9,6 +9,7 @@
     <color name="blue">#2196F3</color>
     <color name="red">#EF5350</color>
 
-    <color name="loading_color">#9E9E9E</color>
+    <color name="loading_color">#6ec972</color>
+    <color name="button_color">#54a358</color>
 
 </resources>

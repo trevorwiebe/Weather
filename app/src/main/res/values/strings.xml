@@ -3,4 +3,8 @@
 
     <string name="wind">Wind: </string>
     <string name="conditions">Conditions: </string>
+
+    <string name="no_connection">No internet connection</string>
+    <string name="no_data_returned">No weather information returned</string>
+    <string name="data_returned_is_unknown">Data returned is in an unknown format. Please check for app updates</string>
 </resources>
