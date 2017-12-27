@@ -15,34 +15,19 @@
         <TextView
             android:id="@+id/current_temp"
             android:textSize="60sp"
+            android:gravity="center_horizontal"
             android:textColor="@android:color/white"
             android:layout_marginTop="108dp"
-            android:layout_marginLeft="48dp"
-            android:layout_marginRight="48dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
         <TextView
             android:id="@+id/current_condition"
-            android:text="@string/conditions"
             android:textSize="25sp"
+            android:gravity="center_horizontal"
             android:textColor="@android:color/white"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
-            android:layout_marginLeft="48dp"
-            android:layout_marginRight="48dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/wind_conditions"
-            android:text="@string/wind"
-            android:textSize="25sp"
-            android:textColor="@android:color/white"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginLeft="48dp"
-            android:layout_marginRight="48dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 

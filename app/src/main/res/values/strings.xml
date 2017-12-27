@@ -1,11 +1,16 @@
 <resources>
     <string name="app_name">Weather</string>
 
-    <string name="wind">Wind: </string>
-    <string name="conditions">Conditions: </string>
 
+    more information text
     <string name="more_information">More information</string>
+    <string name="wind">Wind: </string>
+    <string name="humidity">Humidity: </string>
+    <string name="dewpoint">Dewpoint: </string>
+    <string name="pressure">Pressure: </string>
+    <string name="city_and_state">City and State: </string>
 
+    error text
     <string name="no_connection">No internet connection</string>
     <string name="no_data_returned">No weather information returned</string>
     <string name="data_returned_is_unknown">Data returned is in an unknown format. Please check for app updates</string>

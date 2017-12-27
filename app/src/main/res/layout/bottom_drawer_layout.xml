@@ -3,11 +3,64 @@
               xmlns:app="http://schemas.android.com/apk/res-auto"
               android:id="@+id/bottom_sheet"
               android:layout_width="match_parent"
-              android:layout_height="340dp"
+              android:layout_height="350dp"
               android:orientation="vertical"
               android:layout_gravity="bottom"
+              android:background="@color/white"
               app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
 
+    <TextView
+        android:id="@+id/wind"
+        android:layout_margin="16dp"
+        android:textSize="18sp"
+        android:text="@string/wind"
+        android:textColor="@android:color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/humidity"
+        android:layout_margin="16dp"
+        android:textSize="18sp"
+        android:text="@string/humidity"
+        android:textColor="@android:color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/dewpoint"
+        android:layout_margin="16dp"
+        android:textSize="18sp"
+        android:text="@string/dewpoint"
+        android:textColor="@android:color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/pressure"
+        android:layout_margin="16dp"
+        android:textSize="18sp"
+        android:text="@string/pressure"
+        android:textColor="@android:color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/city_and_state"
+        android:layout_margin="16dp"
+        android:textSize="18sp"
+        android:text="@string/city_and_state"
+        android:textColor="@android:color/black"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/last_updated"
+        android:layout_margin="16dp"
+        android:text="test"
+        android:gravity="bottom|center_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>
 
