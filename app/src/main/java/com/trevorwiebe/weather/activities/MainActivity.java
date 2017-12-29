@@ -386,6 +386,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     }
 
     private void putDataInViews(boolean shouldFade) {
+
         mCurrentTemp.setText(mWeatherMap.get("temp_f") + (char) 0x00B0 + "F");
         mCurrentCondition.setText(mWeatherMap.get("weather"));
 
