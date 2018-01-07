@@ -3,15 +3,12 @@ package com.trevorwiebe.weather.activities;
 import android.Manifest;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -20,7 +17,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -30,7 +26,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -58,14 +53,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     // Widgets
     private FrameLayout mBaseLayout;
+    private LinearLayout mShadowLayout;
     private TextView mCurrentTemp;
     private TextView mCurrentCondition;
     private ProgressBar mLoadingIndicator;
-    private LinearLayout mGrantPermissionLayout;
-    private Button mGrantPermissionBtn;
     private LinearLayout mErrorLayout;
     private TextView mErrorTv;
-    private Button mRetryConnectingBtn;
+    private Button mErrorBtn;
     private LinearLayout mBottomSheet;
     private Button mMoreInfoBtn;
     private TextView mWind;
@@ -83,14 +77,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         // Connect widgets
         mBaseLayout = findViewById(R.id.main_layout);
+        mShadowLayout = findViewById(R.id.shadow_layout);
         mCurrentTemp = findViewById(R.id.current_temp);
         mCurrentCondition = findViewById(R.id.current_condition);
         mLoadingIndicator = findViewById(R.id.loading_indicator);
-        mGrantPermissionLayout = findViewById(R.id.need_permission_layout);
-        mGrantPermissionBtn = findViewById(R.id.grant_location_permission_btn);
         mErrorLayout = findViewById(R.id.errors_layout);
         mErrorTv = findViewById(R.id.error_tv);
-        mRetryConnectingBtn = findViewById(R.id.retry_connecting_btn);
+        mErrorBtn = findViewById(R.id.error_button);
         mBottomSheet = findViewById(R.id.bottom_sheet);
         mMoreInfoBtn = findViewById(R.id.more_information_btn);
         mWind = findViewById(R.id.wind);
@@ -102,12 +95,9 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mWeatherImage = findViewById(R.id.weather_image);
 
         mBottomSheet.setVisibility(View.INVISIBLE);
-
         mBottomSheetBehavior = BottomSheetBehavior.from(mBottomSheet);
-
         mBottomSheetBehavior.setHideable(true);
         mBottomSheetBehavior.setPeekHeight(0);
-
         mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
@@ -118,67 +108,28 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             public void onSlide(@NonNull View bottomSheet, float slideOffset) {
                 if (Float.isNaN(slideOffset)) slideOffset = 1;
                 if (Float.isInfinite(slideOffset)) slideOffset = 0;
-                Log.d(TAG, "onSlide: " + slideOffset);
-                int colorWithDrawerUp = manipulateColor(mCurrentColor, 0.6f);
-                int backgroundColor = ColorUtils.blendARGB(mCurrentColor, colorWithDrawerUp, slideOffset);
-                mBaseLayout.setBackgroundColor(backgroundColor);
+                int transparent = getResources().getColor(android.R.color.transparent);
+                int colorWithDrawerUp = getResources().getColor(R.color.color_with_drawer_up);
+                int backgroundColor = ColorUtils.blendARGB(transparent, colorWithDrawerUp, slideOffset);
+
+                mShadowLayout.setBackgroundColor(backgroundColor);
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    int a = Color.alpha(mCurrentColor);
+                    int r = Math.round(Color.red(mCurrentColor) * 0.6f);
+                    int g = Math.round(Color.green(mCurrentColor) * 0.6f);
+                    int b = Math.round(Color.blue(mCurrentColor) * 0.6f);
+                    int notificationBarColor = Color.argb(a, Math.min(r, 255), Math.min(g, 255), Math.min(b, 255));
+                    int statusBarColor = ColorUtils.blendARGB(mCurrentColor, notificationBarColor, slideOffset);
                     Window window = MainActivity.this.getWindow();
                     window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                     window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                    window.setStatusBarColor(backgroundColor);
+                    window.setStatusBarColor(statusBarColor);
                 }
-
-                int textColorWithDrawerUp = manipulateColor(getResources().getColor(R.color.white), 0.6f);
-                int textColor = ColorUtils.blendARGB(getResources().getColor(R.color.white), textColorWithDrawerUp, slideOffset);
-                setTextColor(textColor);
             }
         });
 
-        mGrantPermissionLayout.setVisibility(View.INVISIBLE);
         mErrorLayout.setVisibility(View.INVISIBLE);
-        mWeatherImage.setVisibility(View.INVISIBLE);
-
-
-        if (savedInstanceState != null) {
-            mWeatherMap = (HashMap<String, String>) savedInstanceState.getSerializable("weatherMap");
-            putDataInViews(false);
-        } else {
-            mMoreInfoBtn.setVisibility(View.INVISIBLE);
-            // Check if device is connected to the internet
-            if (isConnectedToInternet()) {
-                // If it is - get weather data
-                startLoadingWeatherData();
-                setBackgroundColors(getResources().getColor(R.color.loading_color), true);
-                setTextColor(getResources().getColor(R.color.loading_color));
-            } else {
-                // If not - Show that in the Ui
-                mErrorLayout.setVisibility(View.VISIBLE);
-                mErrorTv.setText(getResources().getString(R.string.no_connection));
-                mLoadingIndicator.setVisibility(View.INVISIBLE);
-            }
-        }
-
-        mGrantPermissionBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_CODE);
-            }
-        });
-
-        mRetryConnectingBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (isConnectedToInternet()) {
-                    mLoadingIndicator.setVisibility(View.VISIBLE);
-                    mErrorLayout.setVisibility(View.INVISIBLE);
-                    startLoadingWeatherData();
-                } else {
-                    Toast.makeText(MainActivity.this, getResources().getString(R.string.no_connection), Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
 
         mMoreInfoBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -190,156 +141,141 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+
+        loadFreshWeatherData();
+        mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.loading_color));
+    }
+
+    @Override
+    protected void onStop() {
+        mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        getIntent().putExtra("current_color", mCurrentColor);
+        super.onStop();
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSION_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                mLoadingIndicator.setVisibility(View.VISIBLE);
-                mGrantPermissionLayout.setVisibility(View.INVISIBLE);
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    mFusedLocationProviderClient.getLastLocation()
-                            .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                                @Override
-                                public void onSuccess(Location location) {
-                                    if (location != null) {
-                                        parseLocationAndLoadData(location);
-                                    }
-                                }
-                            });
-                }
+                loadFreshWeatherData();
             } else {
-                mLoadingIndicator.setVisibility(View.INVISIBLE);
-                mGrantPermissionLayout.setVisibility(View.VISIBLE);
+                showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
             }
         }
     }
 
     @Override
     public void loadFinished(String rawData) {
-        mWeatherMap = parseData(rawData);
-        if (mWeatherMap == null) return;
-        putDataInViews(true);
+        parseData(rawData);
+        putDataInViews();
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putSerializable("weatherMap", mWeatherMap);
-        super.onSaveInstanceState(outState);
-    }
+    private void loadFreshWeatherData() {
 
-    private void startLoadingWeatherData() {
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        int colorToSetAt;
+        if (getIntent().getExtras() == null) {
+            colorToSetAt = getResources().getColor(R.color.loading_color);
+        } else {
+            colorToSetAt = getIntent().getIntExtra("current_color", getResources().getColor(R.color.loading_color));
+        }
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mFusedLocationProviderClient.getLastLocation()
-                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+        showLoading(colorToSetAt);
+
+        if (Utility.isConnectedToInternet(this)) {
+            if (Utility.isLocationEnabled(this)) {
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    mFusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
                         @Override
                         public void onSuccess(Location location) {
                             if (location != null) {
-                                parseLocationAndLoadData(location);
+                                String latitude = Double.toString(location.getLatitude());
+                                String longitude = Double.toString(location.getLongitude());
+                                String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+                                new LoadWeatherData(MainActivity.this).execute(url);
+
+                                com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
+                                SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
+
+                                Calendar calendar = Calendar.getInstance();
+
+                                Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
+                                Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
+
+                                long sunsetMillis = officialSunset.getTimeInMillis();
+                                long sunriseMillis = officialSunrise.getTimeInMillis();
+                                long currentTime = calendar.getTimeInMillis();
+
+                                if (sunriseMillis < currentTime && sunsetMillis > currentTime) {
+                                    isSunUp = true;
+                                } else {
+                                    isSunUp = false;
+                                }
+                            } else {
+                                showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
                             }
                         }
                     });
+                } else {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                        showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
+                    } else {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_CODE);
+                    }
+                }
+            } else {
+                showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
+            }
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_CODE);
+            showErrorMessage(Utility.NO_INTERNET_CONNECTION);
         }
     }
 
-    private void parseLocationAndLoadData(Location location) {
-        String latitude = Double.toString(location.getLatitude());
-        String longitude = Double.toString(location.getLongitude());
-        String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
-        new LoadWeatherData(MainActivity.this).execute(url);
-
-        com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
-        SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
-
-        Calendar calendar = Calendar.getInstance();
-
-        Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
-        Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
-
-        long sunsetMillis = officialSunset.getTimeInMillis();
-        long sunriseMillis = officialSunrise.getTimeInMillis();
-        long currentTime = calendar.getTimeInMillis();
-
-        if (sunriseMillis < currentTime && sunsetMillis > currentTime) {
-            isSunUp = true;
-        } else {
-            isSunUp = false;
-        }
-    }
-
-    private HashMap<String, String> parseData(String rawData) {
+    private void parseData(String rawData) {
         if (rawData == null || rawData.equals("")) {
-            mErrorLayout.setVisibility(View.VISIBLE);
-            mErrorTv.setText(getResources().getString(R.string.no_data_returned));
-            mLoadingIndicator.setVisibility(View.INVISIBLE);
-            return null;
-        }
-        HashMap<String, String> weather_map = new HashMap<>();
-        try {
-            JSONObject baseJsonObject = new JSONObject(rawData);
-            JSONObject currentObservationObject = baseJsonObject.getJSONObject("current_observation");
-            weather_map.put("weather", currentObservationObject.getString("weather"));
-            weather_map.put("temp_f", currentObservationObject.getString("temp_f"));
-            weather_map.put("wind_str", currentObservationObject.getString("wind_string"));
-            weather_map.put("dewpoint", currentObservationObject.getString("dewpoint_f"));
-            weather_map.put("pressure", currentObservationObject.getString("pressure_in"));
-            weather_map.put("last_updated", currentObservationObject.getString("observation_time"));
-            weather_map.put("humidity", currentObservationObject.getString("relative_humidity"));
-
-            JSONObject locationObject = currentObservationObject.getJSONObject("display_location");
-            weather_map.put("city_and_state", locationObject.getString("full"));
-            return weather_map;
-        } catch (JSONException e) {
-            Log.d(TAG, "parseData: returning null " + e);
-            mErrorLayout.setVisibility(View.VISIBLE);
-            mErrorTv.setText(getResources().getString(R.string.data_returned_is_unknown));
-            mLoadingIndicator.setVisibility(View.INVISIBLE);
-            return null;
-        }
-
-    }
-
-    private void evaluateBackgroundColor(float temp) {
-        int blue = getResources().getColor(R.color.blue);
-        int red = getResources().getColor(R.color.red);
-        float colorRatio;
-        if (temp < 0) {
-            colorRatio = 1f;
-        } else if (temp < 10) {
-            colorRatio = 0.9f;
-        } else if (temp < 20) {
-            colorRatio = 0.8f;
-        } else if (temp < 30) {
-            colorRatio = 0.7f;
-        } else if (temp < 40) {
-            colorRatio = 0.6f;
-        } else if (temp < 50) {
-            colorRatio = 0.5f;
-        } else if (temp < 60) {
-            colorRatio = 0.4f;
-        } else if (temp < 70) {
-            colorRatio = 0.3f;
-        } else if (temp < 80) {
-            colorRatio = 0.2f;
-        } else if (temp < 90) {
-            colorRatio = 0.1f;
-        } else if (temp < 100) {
-            colorRatio = 0.0f;
+            showErrorMessage(Utility.NO_DATA_RETURNED);
         } else {
-            colorRatio = 0.5f;
+            try {
+
+                /*
+                   This block of code parses the json data
+                */
+
+                // clear the weather hash map of any data
+                mWeatherMap.clear();
+
+                JSONObject baseJsonObject = new JSONObject(rawData);
+                JSONObject currentObservationObject = baseJsonObject.getJSONObject("current_observation");
+                mWeatherMap.put("weather", currentObservationObject.getString("weather"));
+                mWeatherMap.put("temp_f", currentObservationObject.getString("temp_f"));
+                mWeatherMap.put("wind_str", currentObservationObject.getString("wind_string"));
+                mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_f"));
+                mWeatherMap.put("pressure", currentObservationObject.getString("pressure_in"));
+                mWeatherMap.put("last_updated", currentObservationObject.getString("observation_time"));
+                mWeatherMap.put("humidity", currentObservationObject.getString("relative_humidity"));
+
+                JSONObject locationObject = currentObservationObject.getJSONObject("display_location");
+                mWeatherMap.put("city_and_state", locationObject.getString("full"));
+                mWeatherMap.put("sample_lat", locationObject.getString("latitude"));
+                mWeatherMap.put("sample_lng", locationObject.getString("longitude"));
+
+            } catch (JSONException e) {
+                showErrorMessage(Utility.JSON_PARSING_FAILED);
+            }
         }
-        mCurrentColor = ColorUtils.blendARGB(red, blue, colorRatio);
     }
 
-    private void setBackgroundColors(int color, boolean shouldFade) {
+    private void setBackgroundColors(boolean shouldFade, int colorToSetAt) {
+
         if (shouldFade) {
-            ObjectAnimator colorFade = ObjectAnimator.ofObject(mBaseLayout, "backgroundColor", new ArgbEvaluator(), getResources().getColor(R.color.loading_color), color);
+            ObjectAnimator colorFade = ObjectAnimator.ofObject(mBaseLayout, "backgroundColor", new ArgbEvaluator(), mCurrentColor, colorToSetAt);
             colorFade.setDuration(1000);
             colorFade.start();
 
-            ObjectAnimator moreInfoFade = ObjectAnimator.ofObject(mMoreInfoBtn, "backgroundColor", new ArgbEvaluator(), getResources().getColor(R.color.loading_color), color);
+            ObjectAnimator moreInfoFade = ObjectAnimator.ofObject(mMoreInfoBtn, "backgroundColor", new ArgbEvaluator(), mCurrentColor, colorToSetAt);
             moreInfoFade.setDuration(1000);
             moreInfoFade.start();
 
@@ -347,20 +283,22 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 Window window = this.getWindow();
                 window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                 window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                ObjectAnimator notiFade = ObjectAnimator.ofObject(window, "StatusBarColor", new ArgbEvaluator(), getResources().getColor(R.color.loading_color), color);
+                ObjectAnimator notiFade = ObjectAnimator.ofObject(window, "StatusBarColor", new ArgbEvaluator(), mCurrentColor, colorToSetAt);
                 notiFade.setDuration(1000);
                 notiFade.start();
             }
         } else {
-            mBaseLayout.setBackgroundColor(color);
-            mMoreInfoBtn.setBackgroundColor(color);
+            mBaseLayout.setBackgroundColor(colorToSetAt);
+            mMoreInfoBtn.setBackgroundColor(colorToSetAt);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 Window window = this.getWindow();
                 window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
                 window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                window.setStatusBarColor(color);
+                window.setStatusBarColor(colorToSetAt);
             }
         }
+
+        mCurrentColor = colorToSetAt;
     }
 
     private void setTextColor(int color) {
@@ -368,24 +306,20 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCurrentCondition.setTextColor(color);
     }
 
-    private boolean isConnectedToInternet() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null;
-    }
+    private void putDataInViews() {
 
-    private int manipulateColor(int color, float factor) {
-        int a = Color.alpha(color);
-        int r = Math.round(Color.red(color) * factor);
-        int g = Math.round(Color.green(color) * factor);
-        int b = Math.round(Color.blue(color) * factor);
-        return Color.argb(a,
-                Math.min(r, 255),
-                Math.min(g, 255),
-                Math.min(b, 255));
-    }
+        if (mWeatherMap.size() == 0 || mWeatherMap == null) {
+            return;
+        }
 
-    private void putDataInViews(boolean shouldFade) {
+        showContent();
+
+        mWind.setText(getResources().getString(R.string.wind));
+        mHumidity.setText(getResources().getString(R.string.humidity));
+        mDewpoint.setText(getResources().getString(R.string.dewpoint));
+        mPressure.setText(getResources().getString(R.string.pressure));
+        mCityAndState.setText(getResources().getString(R.string.city_and_state));
+        mLastUpdated.setText("");
 
         mCurrentTemp.setText(mWeatherMap.get("temp_f") + (char) 0x00B0 + "F");
         mCurrentCondition.setText(mWeatherMap.get("weather"));
@@ -394,7 +328,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         Resources resources = getResources();
         Bitmap weather_icon = BitmapFactory.decodeResource(resources, drawable);
         mWeatherImage.setImageBitmap(weather_icon);
-        mWeatherImage.setVisibility(View.VISIBLE);
 
         // set more info text views
         mWind.append("   " + mWeatherMap.get("wind_str"));
@@ -405,19 +338,30 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mHumidity.append("   " + mWeatherMap.get("humidity"));
 
         float temp = Float.parseFloat(mWeatherMap.get("temp_f"));
-        evaluateBackgroundColor(temp);
+        // set background colors
+        int colorToSetAt;
+        if (getIntent().getExtras() == null) {
+            int blue = getResources().getColor(R.color.blue);
+            int red = getResources().getColor(R.color.red);
+            float colorRatio;
+            if (temp < 0) {
+                colorRatio = 0.0f;
+            } else if (temp > 100) {
+                colorRatio = 1f;
+            } else {
+                double colorRationDb = temp * 0.01;
+                colorRatio = (float) colorRationDb;
+            }
+            colorToSetAt = ColorUtils.blendARGB(blue, red, colorRatio);
+        } else {
+            colorToSetAt = getIntent().getIntExtra("current_color", getResources().getColor(R.color.loading_color));
+        }
 
-        setBackgroundColors(mCurrentColor, shouldFade);
-
-
-        mMoreInfoBtn.setVisibility(View.VISIBLE);
+        setBackgroundColors(true, colorToSetAt);
 
         // set the text color
         int textColor = getResources().getColor(R.color.white);
         setTextColor(textColor);
-
-        // hide the loading indicator
-        mLoadingIndicator.setVisibility(View.INVISIBLE);
     }
 
     private int chooseWeatherImage(String weather) {
@@ -534,6 +478,114 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                     return R.drawable.unknown;
             }
         }
+    }
+
+    private void showErrorMessage(int errorCode) {
+
+        mWeatherMap.clear();
+        setBackgroundColors(false, getResources().getColor(R.color.loading_color));
+
+        mCurrentTemp.setVisibility(View.INVISIBLE);
+        mWeatherImage.setVisibility(View.INVISIBLE);
+        mCurrentCondition.setVisibility(View.INVISIBLE);
+        mLoadingIndicator.setVisibility(View.INVISIBLE);
+
+        View.OnClickListener errorBtnClickListener;
+
+        String errorMessage;
+        String buttonText = getResources().getString(R.string.retry);
+        switch (errorCode) {
+            case Utility.JSON_PARSING_FAILED:
+                errorMessage = getResources().getString(R.string.data_returned_is_unknown);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        loadFreshWeatherData();
+                    }
+                };
+                break;
+            case Utility.NO_DATA_RETURNED:
+                errorMessage = getResources().getString(R.string.no_data_returned);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        loadFreshWeatherData();
+                    }
+                };
+                break;
+            case Utility.LOCATIONS_NOT_TURNED_ON:
+                errorMessage = getResources().getString(R.string.turn_on_location);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
+                        loadFreshWeatherData();
+                    }
+                };
+                break;
+            case Utility.NEED_LOCATION_PERMISSION:
+                errorMessage = getResources().getString(R.string.needs_permission);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_CODE);
+                    }
+                };
+                buttonText = getResources().getString(R.string.grant_permission);
+                break;
+            case Utility.NO_INTERNET_CONNECTION:
+                errorMessage = getResources().getString(R.string.no_connection);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        loadFreshWeatherData();
+                    }
+                };
+                break;
+            case Utility.FAILED_TO_GET_LOCATION:
+                errorMessage = getResources().getString(R.string.failed_to_get_location);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        loadFreshWeatherData();
+                    }
+                };
+                break;
+            default:
+                errorMessage = "";
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                    }
+                };
+                break;
+        }
+
+        mErrorLayout.setVisibility(View.VISIBLE);
+        mErrorTv.setText(errorMessage);
+        mErrorBtn.setOnClickListener(errorBtnClickListener);
+        mErrorBtn.setText(buttonText);
+    }
+
+    private void showLoading(int color) {
+        setBackgroundColors(false, color);
+        setTextColor(color);
+        mMoreInfoBtn.setVisibility(View.INVISIBLE);
+        mErrorLayout.setVisibility(View.INVISIBLE);
+        mCurrentTemp.setVisibility(View.INVISIBLE);
+        mWeatherImage.setVisibility(View.INVISIBLE);
+        mCurrentCondition.setVisibility(View.INVISIBLE);
+        mLoadingIndicator.setVisibility(View.VISIBLE);
+    }
+
+    private void showContent() {
+        mMoreInfoBtn.setVisibility(View.VISIBLE);
+        mErrorLayout.setVisibility(View.INVISIBLE);
+        mCurrentTemp.setVisibility(View.VISIBLE);
+        mWeatherImage.setVisibility(View.VISIBLE);
+        mCurrentCondition.setVisibility(View.VISIBLE);
+        mLoadingIndicator.setVisibility(View.INVISIBLE);
     }
 
 }

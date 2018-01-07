@@ -12,4 +12,6 @@
     <color name="loading_color">#8875A2</color>
     <color name="button_color">#7a5ba4</color>
 
+    <color name="color_with_drawer_up">#66000000</color>
+
 </resources>
