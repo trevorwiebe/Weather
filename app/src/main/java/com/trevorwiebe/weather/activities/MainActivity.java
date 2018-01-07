@@ -43,7 +43,6 @@ import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished {
 
-    private static final String TAG = "MainActivity";
     private static final int PERMISSION_CODE = 930;
     private FusedLocationProviderClient mFusedLocationProviderClient;
     private int mCurrentColor;
@@ -518,7 +517,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
                         loadFreshWeatherData();
                     }
                 };
@@ -552,11 +550,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 };
                 break;
             default:
-                errorMessage = "";
+                errorMessage = "Unknown Error";
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-
+                        loadFreshWeatherData();
                     }
                 };
                 break;

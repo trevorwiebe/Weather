@@ -24,8 +24,6 @@ public class Utility {
     public static final int LOCATIONS_NOT_TURNED_ON = 4;
     public static final int FAILED_TO_GET_LOCATION = 5;
 
-    public static final int LOADING_COLOR = 500;
-
     // Check if is connected to the internet
     public static boolean isConnectedToInternet(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

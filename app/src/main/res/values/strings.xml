@@ -6,7 +6,7 @@
     <string name="more_information">More information</string>
     <string name="wind">Wind: </string>
     <string name="humidity">Humidity: </string>
-    <string name="dewpoint">Dewpoint: </string>
+    <string name="dewpoint">Dew point: </string>
     <string name="pressure">Pressure: </string>
     <string name="city_and_state">City and State: </string>
 
