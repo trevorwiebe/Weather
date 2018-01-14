@@ -339,22 +339,19 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         float temp = Float.parseFloat(mWeatherMap.get("temp_f"));
         // set background colors
         int colorToSetAt;
-        if (getIntent().getExtras() == null) {
-            int blue = getResources().getColor(R.color.blue);
-            int red = getResources().getColor(R.color.red);
-            float colorRatio;
-            if (temp < 0) {
-                colorRatio = 0.0f;
-            } else if (temp > 100) {
-                colorRatio = 1f;
-            } else {
-                double colorRationDb = temp * 0.01;
-                colorRatio = (float) colorRationDb;
-            }
-            colorToSetAt = ColorUtils.blendARGB(blue, red, colorRatio);
+
+        int blue = getResources().getColor(R.color.blue);
+        int red = getResources().getColor(R.color.red);
+        float colorRatio;
+        if (temp < 0) {
+            colorRatio = 0.0f;
+        } else if (temp > 100) {
+            colorRatio = 1f;
         } else {
-            colorToSetAt = getIntent().getIntExtra("current_color", getResources().getColor(R.color.loading_color));
+            double colorRationDb = temp * 0.01;
+            colorRatio = (float) colorRationDb;
         }
+        colorToSetAt = ColorUtils.blendARGB(blue, red, colorRatio);
 
         setBackgroundColors(true, colorToSetAt);
 
