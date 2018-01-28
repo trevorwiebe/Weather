@@ -8,7 +8,13 @@
     <string name="humidity">Humidity: </string>
     <string name="dewpoint">Dew point: </string>
     <string name="pressure">Pressure: </string>
-    <string name="city_and_state">City and State: </string>
+    <string name="city_and_state">Location: </string>
+    <string name="feels_like">Feels like:</string>
+    <string name="precipication">Precipitation in last 24 hrs:</string>
+    <string name="visibility">Visibility:</string>
+    <string name="celsius">\u2103</string>
+    <string name="fahrenheit">\u2109</string>
+    <string name="rate">Give me five</string>
 
     error text
     <string name="no_connection">No internet connection</string>

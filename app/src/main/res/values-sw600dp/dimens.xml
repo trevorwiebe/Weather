@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="more_info_card_margin">70dp</dimen>
+    <integer name="text_view_ems">8</integer>
+
+</resources>
