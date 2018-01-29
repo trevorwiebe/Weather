@@ -14,7 +14,7 @@
     <string name="visibility">Visibility:</string>
     <string name="celsius">\u2103</string>
     <string name="fahrenheit">\u2109</string>
-    <string name="rate">Rate</string>
+    <string name="rate">Give me five</string>
     <string name="open_menu">Open menu</string>
     <string name="settings">Settings</string>
 
@@ -33,11 +33,11 @@
     <string name="dialog_settings_title">Select a Unit</string>
 
     <string name="unit_auto_value">automatic</string>
-    <string name="unit_fahrenheit_value">fahrenheit</string>
-    <string name="unit_celsius_value">celsius</string>
+    <string name="unit_imperial_value">imperial</string>
+    <string name="unit_metric_value">metric</string>
 
     <string name="unit_auto_label">Automatic</string>
-    <string name="unit_fahrenheit_label">Fahrenheit</string>
-    <string name="unit_celsius_label">Celsius</string>
+    <string name="unit_imperial_label">Imperial</string>
+    <string name="unit_metric_label">Metric</string>
 
 </resources>

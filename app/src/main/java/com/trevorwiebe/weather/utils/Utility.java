@@ -7,9 +7,6 @@ import android.os.Build;
 import android.provider.Settings;
 import android.text.TextUtils;
 
-/**
- * Created by thisi on 12/26/2017.
- */
 
 public class Utility {
 
@@ -26,8 +23,8 @@ public class Utility {
 
     // Unit settings strings
     public static final String AUTOMATIC = "automatic";
-    public static final String FAHRENHEIT = "fahrenheit";
-    public static final String CELSIUS = "celsius";
+    public static final String IMPERIAL = "imperial";
+    public static final String CELSIUS = "metric";
 
     // Check if is connected to the internet
     public static boolean isConnectedToInternet(Context context) {

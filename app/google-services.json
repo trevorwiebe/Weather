@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "371666246128",
+    "firebase_url": "https://weather-9f107.firebaseio.com",
+    "project_id": "weather-9f107",
+    "storage_bucket": "weather-9f107.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:371666246128:android:63007c0a40341041",
+        "android_client_info": {
+          "package_name": "com.trevorwiebe.weather"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "371666246128-l5ai6q5qb0dl28aj34hrsohk8j6rb1b6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhLxl8Mt-LvtV5yekvqChF3hOSYHhJ7qo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

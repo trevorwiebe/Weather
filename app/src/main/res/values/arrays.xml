@@ -3,14 +3,14 @@
 
     <string-array name="unit_labels">
         <item>@string/unit_auto_label</item>
-        <item>@string/unit_celsius_label</item>
-        <item>@string/unit_fahrenheit_label</item>
+        <item>@string/unit_metric_label</item>
+        <item>@string/unit_imperial_label</item>
     </string-array>
 
     <string-array name="unit_values">
         <item>@string/unit_auto_value</item>
-        <item>@string/unit_celsius_value</item>
-        <item>@string/unit_fahrenheit_value</item>
+        <item>@string/unit_metric_value</item>
+        <item>@string/unit_imperial_value</item>
     </string-array>
 
 </resources>

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -13,6 +14,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomSheetBehavior;
@@ -20,6 +22,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -85,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
 
         // Connect widgets
         mBaseLayout = findViewById(R.id.main_layout);
@@ -159,8 +164,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     protected void onResume() {
         super.onResume();
 
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
-
         loadFreshWeatherData();
         mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
     }
@@ -230,16 +233,16 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         showLoading(colorToSetAt);
 
         if (Utility.isConnectedToInternet(this)) {
+
             if (Utility.isLocationEnabled(this)) {
+
                 if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     mFusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
                         @Override
                         public void onSuccess(Location location) {
-//                            if (location != null) {
-//                                String latitude = Double.toString(location.getLatitude());
-//                                String longitude = Double.toString(location.getLongitude());
-                            String latitude = "38";
-                            String longitude = "-97";
+                            if (location != null) {
+                                String latitude = Double.toString(location.getLatitude());
+                                String longitude = Double.toString(location.getLongitude());
                                 String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
                                 new LoadWeatherData(MainActivity.this).execute(url);
 
@@ -255,14 +258,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                                 long sunriseMillis = officialSunrise.getTimeInMillis();
                                 long currentTime = calendar.getTimeInMillis();
 
-                                if (sunriseMillis < currentTime && sunsetMillis > currentTime) {
-                                    isSunUp = true;
-                                } else {
-                                    isSunUp = false;
-                                }
-//                            } else {
-//                                showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
-//                            }
+                                isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
+
+                            } else {
+                                showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
+                            }
                         }
                     });
                 } else {
@@ -272,9 +272,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_CODE);
                     }
                 }
+
             } else {
                 showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
             }
+
         } else {
             showErrorMessage(Utility.NO_INTERNET_CONNECTION);
         }
@@ -300,32 +302,69 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 mWeatherMap.put("pressure", currentObservationObject.getString("pressure_in"));
                 mWeatherMap.put("last_updated", currentObservationObject.getString("observation_time"));
                 mWeatherMap.put("humidity", currentObservationObject.getString("relative_humidity"));
+                mWeatherMap.put("temp_f", currentObservationObject.getString("temp_f"));
 
                 JSONObject locationObject = currentObservationObject.getJSONObject("display_location");
                 mWeatherMap.put("city_and_state", locationObject.getString("full"));
                 mWeatherMap.put("sample_lat", locationObject.getString("latitude"));
                 mWeatherMap.put("sample_lng", locationObject.getString("longitude"));
 
+                switch (getCurrentUnitSetting()) {
+                    case Utility.AUTOMATIC:
+                        if (UnitLocale.getDefault() == UnitLocale.Imperial) {
+                            mWeatherMap.put("wind_str", currentObservationObject.getString("wind_string"));
+                            mWeatherMap.put("temp", currentObservationObject.getString("temp_f"));
+                            mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_f"));
+                            mWeatherMap.put("precip_today", currentObservationObject.getString("precip_today_in"));
+                            mWeatherMap.put("visibility", currentObservationObject.getString("visibility_mi"));
+                            mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_f"));
+                        } else {
+                            String wind_kph = Integer.toString(currentObservationObject.getInt("wind_kph"));
+                            String wind_kph_gust = currentObservationObject.getString("wind_gust_kph");
+                            String wind_dir = currentObservationObject.getString("wind_dir");
+                            String wind_str = "From the " + wind_dir + " at " + wind_kph + " kph Gusting to " + wind_kph_gust + " kph";
+                            mWeatherMap.put("wind_str", wind_str);
+                            mWeatherMap.put("temp", currentObservationObject.getString("temp_c"));
+                            mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_c"));
 
-                if (UnitLocale.getDefault() == UnitLocale.Imperial) {
-                    mWeatherMap.put("wind_str", currentObservationObject.getString("wind_string"));
-                    mWeatherMap.put("temp", currentObservationObject.getString("temp_f"));
-                    mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_f"));
-                    mWeatherMap.put("precip_today", currentObservationObject.getString("precip_today_in"));
-                    mWeatherMap.put("visibility", currentObservationObject.getString("visibility_mi"));
-                    mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_f"));
-                } else {
-                    String wind_kph = Integer.toString(currentObservationObject.getInt("wind_kph"));
-                    String wind_kph_gust = currentObservationObject.getString("wind_gust_kph");
-                    mWeatherMap.put("wind_str", wind_kph);
-                    mWeatherMap.put("temp", currentObservationObject.getString("temp_c"));
-                    mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_c"));
-                    ;
-                    mWeatherMap.put("temp", currentObservationObject.getString("temp_c"));
-                    mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_c"));
-                    mWeatherMap.put("precip_today", currentObservationObject.getString("precip_today_metric"));
-                    mWeatherMap.put("visibility", currentObservationObject.getString("visibility_km"));
-                    mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_c"));
+                            mWeatherMap.put("temp", currentObservationObject.getString("temp_c"));
+                            mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_c"));
+                            mWeatherMap.put("precip_today", currentObservationObject.getString("precip_today_metric"));
+                            mWeatherMap.put("visibility", currentObservationObject.getString("visibility_km"));
+                            mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_c"));
+                        }
+                        break;
+                    case Utility.IMPERIAL:
+                        mWeatherMap.put("wind_str", currentObservationObject.getString("wind_string"));
+                        mWeatherMap.put("temp", currentObservationObject.getString("temp_f"));
+                        mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_f"));
+                        mWeatherMap.put("precip_today", currentObservationObject.getString("precip_today_in"));
+                        mWeatherMap.put("visibility", currentObservationObject.getString("visibility_mi"));
+                        mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_f"));
+                        break;
+                    case Utility.CELSIUS:
+                        String wind_kph = Integer.toString(currentObservationObject.getInt("wind_kph"));
+                        String wind_kph_gust = currentObservationObject.getString("wind_gust_kph");
+                        String wind_dir = currentObservationObject.getString("wind_dir");
+                        String wind_str = "From the " + wind_dir + " at " + wind_kph + " kph Gusting to " + wind_kph_gust + " kph";
+                        mWeatherMap.put("wind_str", wind_str);
+                        mWeatherMap.put("temp", currentObservationObject.getString("temp_c"));
+                        mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_c"));
+
+                        mWeatherMap.put("temp", currentObservationObject.getString("temp_c"));
+                        mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_c"));
+                        mWeatherMap.put("precip_today", currentObservationObject.getString("precip_today_metric"));
+                        mWeatherMap.put("visibility", currentObservationObject.getString("visibility_km"));
+                        mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_c"));
+                        break;
+                    default:
+                        mWeatherMap.put("wind_str", currentObservationObject.getString("wind_string"));
+                        mWeatherMap.put("temp", currentObservationObject.getString("temp_f"));
+                        mWeatherMap.put("dewpoint", currentObservationObject.getString("dewpoint_f"));
+                        mWeatherMap.put("precip_today", currentObservationObject.getString("precip_today_in"));
+                        mWeatherMap.put("visibility", currentObservationObject.getString("visibility_mi"));
+                        mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_f"));
+                        break;
                 }
             } catch (JSONException e) {
                 showErrorMessage(Utility.JSON_PARSING_FAILED);
@@ -382,17 +421,38 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         String tempIdentifier;
         String distanceIdentifier;
         String liquidIdentifier;
-        if (UnitLocale.getDefault() == UnitLocale.Imperial) {
-            tempIdentifier = "F";
-            distanceIdentifier = " mi";
-            liquidIdentifier = " in";
-        } else {
-            tempIdentifier = "C";
-            distanceIdentifier = " kph";
-            liquidIdentifier = " mm";
+
+        switch (getCurrentUnitSetting()) {
+            case Utility.AUTOMATIC:
+                if (UnitLocale.getDefault() == UnitLocale.Imperial) {
+                    tempIdentifier = getResources().getString(R.string.fahrenheit);
+                    distanceIdentifier = " mi";
+                    liquidIdentifier = " in";
+                } else {
+                    tempIdentifier = getResources().getString(R.string.celsius);
+                    distanceIdentifier = " kph";
+                    liquidIdentifier = " mm";
+                }
+                break;
+            case Utility.CELSIUS:
+                tempIdentifier = getResources().getString(R.string.celsius);
+                distanceIdentifier = " kph";
+                liquidIdentifier = " mm";
+                break;
+            case Utility.IMPERIAL:
+                tempIdentifier = getResources().getString(R.string.fahrenheit);
+                distanceIdentifier = " mi";
+                liquidIdentifier = " in";
+                break;
+            default:
+                tempIdentifier = getResources().getString(R.string.fahrenheit);
+                distanceIdentifier = " mi";
+                liquidIdentifier = " in";
+                break;
         }
 
-        mCurrentTemp.setText(mWeatherMap.get("temp") + (char) 0x00B0 + tempIdentifier);
+        String currentTemp = mWeatherMap.get("temp") + " " + tempIdentifier;
+        mCurrentTemp.setText(currentTemp);
         mCurrentCondition.setText(mWeatherMap.get("weather"));
 
         int drawable = chooseWeatherImage(mWeatherMap.get("weather"));
@@ -401,23 +461,30 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mWeatherImage.setImageBitmap(weather_icon);
 
         // set more info text views
-        mWind.setText(mWeatherMap.get("wind_str"));
-        mDewpoint.setText(mWeatherMap.get("dewpoint") + (char) 0x00B0 + tempIdentifier);
-        mPressure.setText(mWeatherMap.get("pressure"));
-        mCityAndState.setText(mWeatherMap.get("city_and_state"));
-        mLastUpdated.setText(mWeatherMap.get("last_updated"));
-        mHumidity.setText(mWeatherMap.get("humidity"));
-        mPrecip.setText(mWeatherMap.get("precip_today") + liquidIdentifier);
-        mFeelsLike.setText(mWeatherMap.get("feelslike") + (char) 0x00B0 + tempIdentifier);
-        mVisibility.setText(mWeatherMap.get("visibility") + distanceIdentifier);
+        String wind = mWeatherMap.get("wind_str");
+        String dewPoint = mWeatherMap.get("dewpoint") + " " + tempIdentifier;
+        String pressure = mWeatherMap.get("pressure");
+        String location = mWeatherMap.get("city_and_state");
+        String lastUpdated = mWeatherMap.get("last_updated");
+        String humidity = mWeatherMap.get("humidity");
+        String precipitation = mWeatherMap.get("precip_today") + liquidIdentifier;
+        String feelsLike = mWeatherMap.get("feelslike") + " " + tempIdentifier;
+        String visibility = mWeatherMap.get("visibility") + distanceIdentifier;
 
-        double temp = Float.parseFloat(mWeatherMap.get("temp"));
-        if (UnitLocale.getDefault() == UnitLocale.Metric) {
-            temp = (temp * 1.8) + 32;
-        }
+        mWind.setText(wind);
+        mDewpoint.setText(dewPoint);
+        mPressure.setText(pressure);
+        mCityAndState.setText(location);
+        mLastUpdated.setText(lastUpdated);
+        mHumidity.setText(humidity);
+        mPrecip.setText(precipitation);
+        mFeelsLike.setText(feelsLike);
+        mVisibility.setText(visibility);
+
         // set background colors
-        int colorToSetAt;
+        double temp = Float.parseFloat(mWeatherMap.get("temp_f"));
 
+        Log.d(TAG, "putDataInViews: " + temp);
         int blue = getResources().getColor(R.color.blue);
         int red = getResources().getColor(R.color.red);
         float colorRatio;
@@ -429,7 +496,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             double colorRationDb = temp * 0.01;
             colorRatio = (float) colorRationDb;
         }
-        colorToSetAt = ColorUtils.blendARGB(blue, red, colorRatio);
+        int colorToSetAt = ColorUtils.blendARGB(blue, red, colorRatio);
 
         setBackgroundColors(true, colorToSetAt);
 
@@ -659,6 +726,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mWeatherImage.setVisibility(View.VISIBLE);
         mCurrentCondition.setVisibility(View.VISIBLE);
         mLoadingIndicator.setVisibility(View.INVISIBLE);
+    }
+
+    private String getCurrentUnitSetting() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        return sharedPreferences.getString("settings_units", getResources().getString(R.string.unit_auto_value));
     }
 
 }
