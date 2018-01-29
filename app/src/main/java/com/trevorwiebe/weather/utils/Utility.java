@@ -16,13 +16,18 @@ public class Utility {
     // Base Url
     public static final String BASE_URL = "http://api.wunderground.com/api/d2ca143a09cfc813/conditions/q/";
 
-    // All possible outcomes to fetching data
+    // All possible errors that can happen when fetching data
     public static final int NO_DATA_RETURNED = 0;
     public static final int NEED_LOCATION_PERMISSION = 1;
     public static final int JSON_PARSING_FAILED = 2;
     public static final int NO_INTERNET_CONNECTION = 3;
     public static final int LOCATIONS_NOT_TURNED_ON = 4;
     public static final int FAILED_TO_GET_LOCATION = 5;
+
+    // Unit settings strings
+    public static final String AUTOMATIC = "automatic";
+    public static final String FAHRENHEIT = "fahrenheit";
+    public static final String CELSIUS = "celsius";
 
     // Check if is connected to the internet
     public static boolean isConnectedToInternet(Context context) {

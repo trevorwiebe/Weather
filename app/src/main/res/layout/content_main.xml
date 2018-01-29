@@ -45,7 +45,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:background="@color/button_color"
+            android:background="@color/colorPrimaryDark"
             android:padding="15dp"
             android:textColor="@color/white"/>
 

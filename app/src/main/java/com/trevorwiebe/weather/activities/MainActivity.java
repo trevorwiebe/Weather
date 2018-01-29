@@ -20,7 +20,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -28,6 +29,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -46,7 +48,7 @@ import org.json.JSONObject;
 import java.util.Calendar;
 import java.util.HashMap;
 
-public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished {
+public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished, PopupMenu.OnMenuItemClickListener {
 
     private static final String TAG = "MainActivity";
 
@@ -160,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
 
         loadFreshWeatherData();
-        mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.loading_color));
+        mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
     }
 
     @Override
@@ -196,13 +198,33 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         }
     }
 
+    public void openMenu(View view) {
+        PopupMenu popupMenu = new PopupMenu(this, view);
+        MenuInflater inflater = popupMenu.getMenuInflater();
+        inflater.inflate(R.menu.menu, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(this);
+        popupMenu.show();
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_settings:
+                Intent settings_intent = new Intent(MainActivity.this, SettingsActivity.class);
+                startActivity(settings_intent);
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private void loadFreshWeatherData() {
 
         int colorToSetAt;
         if (getIntent().getExtras() == null) {
-            colorToSetAt = getResources().getColor(R.color.loading_color);
+            colorToSetAt = getResources().getColor(R.color.colorPrimary);
         } else {
-            colorToSetAt = getIntent().getIntExtra("current_color", getResources().getColor(R.color.loading_color));
+            colorToSetAt = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
         }
 
         showLoading(colorToSetAt);
@@ -219,7 +241,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                             String latitude = "38";
                             String longitude = "-97";
                                 String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
-                            Log.d(TAG, "onSuccess: " + url);
                                 new LoadWeatherData(MainActivity.this).execute(url);
 
                                 com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
@@ -536,7 +557,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private void showErrorMessage(int errorCode) {
 
         mWeatherMap.clear();
-        setBackgroundColors(false, getResources().getColor(R.color.loading_color));
+        setBackgroundColors(false, getResources().getColor(R.color.colorPrimary));
 
         mCurrentTemp.setVisibility(View.INVISIBLE);
         mWeatherImage.setVisibility(View.INVISIBLE);

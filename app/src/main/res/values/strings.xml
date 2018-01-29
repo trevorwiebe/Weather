@@ -14,7 +14,9 @@
     <string name="visibility">Visibility:</string>
     <string name="celsius">\u2103</string>
     <string name="fahrenheit">\u2109</string>
-    <string name="rate">Give me five</string>
+    <string name="rate">Rate</string>
+    <string name="open_menu">Open menu</string>
+    <string name="settings">Settings</string>
 
     error text
     <string name="no_connection">No internet connection</string>
@@ -25,5 +27,17 @@
     <string name="failed_to_get_location">Cannot determine location. Please try again in a few minutes</string>
     <string name="retry">Retry</string>
     <string name="grant_permission">Grant Permission</string>
+
+    settings
+    <string name="settings_title">Units</string>
+    <string name="dialog_settings_title">Select a Unit</string>
+
+    <string name="unit_auto_value">automatic</string>
+    <string name="unit_fahrenheit_value">fahrenheit</string>
+    <string name="unit_celsius_value">celsius</string>
+
+    <string name="unit_auto_label">Automatic</string>
+    <string name="unit_fahrenheit_label">Fahrenheit</string>
+    <string name="unit_celsius_label">Celsius</string>
 
 </resources>
