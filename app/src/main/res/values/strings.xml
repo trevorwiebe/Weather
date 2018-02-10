@@ -22,8 +22,8 @@
     <string name="no_connection">No internet connection</string>
     <string name="no_data_returned">No weather information returned</string>
     <string name="data_returned_is_unknown">Data returned is in an unknown format. Please check for app updates</string>
-    <string name="turn_on_location">Please turn on location so Weather can function correctly.</string>
-    <string name="needs_permission">Weather needs permission to access location</string>
+    <string name="turn_on_location">Please turn on location so Simple Weather can function correctly.</string>
+    <string name="needs_permission">Simple Weather needs permission to access location. Your location is not stored and will only be used once when you first open the app to load the weather.</string>
     <string name="failed_to_get_location">Cannot determine location. Please try again in a few minutes</string>
     <string name="retry">Retry</string>
     <string name="grant_permission">Grant Permission</string>

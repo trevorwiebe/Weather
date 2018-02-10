@@ -11,6 +11,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,9 +38,6 @@ import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.trevorwiebe.weather.R;
 import com.trevorwiebe.weather.utils.LoadWeatherData;
@@ -51,16 +50,19 @@ import org.json.JSONObject;
 import java.util.Calendar;
 import java.util.HashMap;
 
+//public class MainActivity extends AppCompatActivity  {
+
 public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished, PopupMenu.OnMenuItemClickListener {
 
     private static final String TAG = "MainActivity";
 
     private static final int PERMISSION_CODE = 930;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
     private int mCurrentColor;
     private BottomSheetBehavior mBottomSheetBehavior;
     private HashMap<String, String> mWeatherMap = new HashMap<>();
     private boolean isSunUp;
+    private LocationManager mLocationManager;
+    private LocationListener mLocationListener;
 
     // Widgets
     private FrameLayout mBaseLayout;
@@ -89,8 +91,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
-
         // Connect widgets
         mBaseLayout = findViewById(R.id.main_layout);
         mShadowLayout = findViewById(R.id.shadow_layout);
@@ -113,6 +113,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mLastUpdated = findViewById(R.id.last_updated);
         mHumidity = findViewById(R.id.humidity_content);
         mWeatherImage = findViewById(R.id.weather_image);
+
+        mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
 
         mBottomSheet.setVisibility(View.INVISIBLE);
         mBottomSheetBehavior = BottomSheetBehavior.from(mBottomSheet);
@@ -158,30 +160,73 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             }
         });
+
+        mLocationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
+
+        mLocationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+
+                mLocationManager.removeUpdates(mLocationListener);
+
+                String latitude = Double.toString(location.getLatitude());
+                String longitude = Double.toString(location.getLongitude());
+                String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+                new LoadWeatherData(MainActivity.this).execute(url);
+
+                com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
+                SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
+
+                Calendar calendar = Calendar.getInstance();
+
+                Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
+                Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
+
+                long sunsetMillis = officialSunset.getTimeInMillis();
+                long sunriseMillis = officialSunrise.getTimeInMillis();
+                long currentTime = calendar.getTimeInMillis();
+
+                isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
+
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
     }
 
     @Override
     protected void onResume() {
-        super.onResume();
-
         loadFreshWeatherData();
-        mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
+        super.onResume();
     }
 
     @Override
-    protected void onStop() {
+    protected void onPause() {
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         getIntent().putExtra("current_color", mCurrentColor);
-        super.onStop();
+        super.onPause();
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                loadFreshWeatherData();
-            } else {
-                showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
+            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                if (mLocationManager != null) {
+                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, mLocationListener);
+                }
             }
         }
     }
@@ -221,7 +266,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         }
     }
 
-    private void loadFreshWeatherData() {
+    public void loadFreshWeatherData() {
 
         int colorToSetAt;
         if (getIntent().getExtras() == null) {
@@ -232,53 +277,24 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         showLoading(colorToSetAt);
 
-        if (Utility.isConnectedToInternet(this)) {
-
-            if (Utility.isLocationEnabled(this)) {
-
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    mFusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            if (location != null) {
-                                String latitude = Double.toString(location.getLatitude());
-                                String longitude = Double.toString(location.getLongitude());
-                                String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
-                                new LoadWeatherData(MainActivity.this).execute(url);
-
-                                com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
-                                SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
-
-                                Calendar calendar = Calendar.getInstance();
-
-                                Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
-                                Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
-
-                                long sunsetMillis = officialSunset.getTimeInMillis();
-                                long sunriseMillis = officialSunrise.getTimeInMillis();
-                                long currentTime = calendar.getTimeInMillis();
-
-                                isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
-
-                            } else {
-                                showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
-                            }
-                        }
-                    });
+        if (Utility.isLocationEnabled(this)) {
+            if (Utility.isConnectedToInternet(this)) {
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    if (mLocationManager != null) {
+                        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, mLocationListener);
+                    }
                 } else {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)) {
                         showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
                     } else {
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_CODE);
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_CODE);
                     }
                 }
-
             } else {
-                showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
+                showErrorMessage(Utility.NO_INTERNET_CONNECTION);
             }
-
         } else {
-            showErrorMessage(Utility.NO_INTERNET_CONNECTION);
+            showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
         }
     }
 
@@ -668,7 +684,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_CODE);
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_CODE);
                     }
                 };
                 buttonText = getResources().getString(R.string.grant_permission);
