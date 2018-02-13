@@ -19,24 +19,28 @@
         android:weightSum="7"
         android:orientation="horizontal">
 
-        <Button
-            android:layout_weight="2"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="24dp"
-            android:layout_marginRight="24dp"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/rate_btn"
-            android:minHeight="5dp"
-            android:onClick="rate"
-            android:padding="5dp"
-            android:text="@string/rate"
-            android:textColor="@color/white"/>
-
         <LinearLayout
-            android:layout_weight="4"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"/>
+            android:layout_weight="6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="24dp"
+                android:layout_marginRight="24dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="5dp"
+                style="?buttonBarButtonStyle"
+                android:background="@color/colorPrimary"
+                android:minHeight="5dp"
+                android:onClick="rate"
+                android:padding="5dp"
+                android:text="@string/rate"
+                android:textColor="@color/white"/>
+
+        </LinearLayout>
+
 
         <ImageButton
             android:layout_weight="1"

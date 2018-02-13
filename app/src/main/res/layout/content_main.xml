@@ -7,11 +7,28 @@
 
     <include layout="@layout/temp_layout"/>
 
-    <ProgressBar
-        android:id="@+id/loading_indicator"
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/loading_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center">
+
+        <ProgressBar
+            android:id="@+id/loading_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"/>
+
+        <TextView
+            android:id="@+id/loading_inform"
+            android:textColor="@color/white"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"/>
+
+    </LinearLayout>
 
     <Button
         android:id="@+id/more_information_btn"

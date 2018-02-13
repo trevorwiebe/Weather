@@ -17,6 +17,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomSheetBehavior;
@@ -35,7 +36,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
@@ -63,13 +63,15 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private boolean isSunUp;
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
+    private boolean isDrawerUp = false;
 
     // Widgets
     private FrameLayout mBaseLayout;
     private LinearLayout mShadowLayout;
     private TextView mCurrentTemp;
     private TextView mCurrentCondition;
-    private ProgressBar mLoadingIndicator;
+    private LinearLayout mLoadingLayout;
+    private TextView mLoadingInform;
     private LinearLayout mErrorLayout;
     private TextView mErrorTv;
     private Button mErrorBtn;
@@ -96,7 +98,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mShadowLayout = findViewById(R.id.shadow_layout);
         mCurrentTemp = findViewById(R.id.current_temp);
         mCurrentCondition = findViewById(R.id.current_condition);
-        mLoadingIndicator = findViewById(R.id.loading_indicator);
+        mLoadingLayout = findViewById(R.id.loading_layout);
+        mLoadingInform = findViewById(R.id.loading_inform);
         mErrorLayout = findViewById(R.id.errors_layout);
         mErrorTv = findViewById(R.id.error_tv);
         mErrorBtn = findViewById(R.id.error_button);
@@ -119,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mBottomSheet.setVisibility(View.INVISIBLE);
         mBottomSheetBehavior = BottomSheetBehavior.from(mBottomSheet);
         mBottomSheetBehavior.setHideable(true);
-        mBottomSheetBehavior.setPeekHeight(0);
+        mBottomSheetBehavior.setPeekHeight(-10);
         mBottomSheetBehavior.setBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
             @Override
             public void onStateChanged(@NonNull View bottomSheet, int newState) {
@@ -135,6 +138,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 int backgroundColor = ColorUtils.blendARGB(transparent, colorWithDrawerUp, slideOffset);
 
                 mShadowLayout.setBackgroundColor(backgroundColor);
+
+                if (slideOffset == 1.0) {
+                    isDrawerUp = true;
+                } else if (slideOffset == 0.0) {
+                    isDrawerUp = false;
+                }
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     int a = Color.alpha(mCurrentColor);
@@ -172,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 String latitude = Double.toString(location.getLatitude());
                 String longitude = Double.toString(location.getLongitude());
                 String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+                showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
                 new LoadWeatherData(MainActivity.this).execute(url);
 
                 com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
@@ -266,16 +276,18 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        if (isDrawerUp) {
+            mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
     public void loadFreshWeatherData() {
 
-        int colorToSetAt;
-        if (getIntent().getExtras() == null) {
-            colorToSetAt = getResources().getColor(R.color.colorPrimary);
-        } else {
-            colorToSetAt = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
-        }
-
-        showLoading(colorToSetAt);
+        showLoading(getResources().getString(R.string.loading_inform_requesting_location));
 
         if (Utility.isLocationEnabled(this)) {
             if (Utility.isConnectedToInternet(this)) {
@@ -500,6 +512,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         // set background colors
         double temp = Float.parseFloat(mWeatherMap.get("temp_f"));
 
+
         Log.d(TAG, "putDataInViews: " + temp);
         int blue = getResources().getColor(R.color.blue);
         int red = getResources().getColor(R.color.red);
@@ -645,7 +658,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCurrentTemp.setVisibility(View.INVISIBLE);
         mWeatherImage.setVisibility(View.INVISIBLE);
         mCurrentCondition.setVisibility(View.INVISIBLE);
-        mLoadingIndicator.setVisibility(View.INVISIBLE);
+        mLoadingLayout.setVisibility(View.INVISIBLE);
 
         View.OnClickListener errorBtnClickListener;
 
@@ -672,10 +685,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 break;
             case Utility.LOCATIONS_NOT_TURNED_ON:
                 errorMessage = getResources().getString(R.string.turn_on_location);
+                buttonText = getResources().getString(R.string.open_location);
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        loadFreshWeatherData();
+                        startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     }
                 };
                 break;
@@ -724,7 +738,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mErrorBtn.setText(buttonText);
     }
 
-    private void showLoading(int color) {
+    private void showLoading(String loadingInform) {
+        int color;
+        if (getIntent().getExtras() == null) {
+            color = getResources().getColor(R.color.colorPrimary);
+        } else {
+            color = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
+        }
         setBackgroundColors(false, color);
         setTextColor(color);
         mMoreInfoBtn.setVisibility(View.INVISIBLE);
@@ -732,7 +752,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCurrentTemp.setVisibility(View.INVISIBLE);
         mWeatherImage.setVisibility(View.INVISIBLE);
         mCurrentCondition.setVisibility(View.INVISIBLE);
-        mLoadingIndicator.setVisibility(View.VISIBLE);
+        mLoadingLayout.setVisibility(View.VISIBLE);
+        mLoadingInform.setText(loadingInform);
     }
 
     private void showContent() {
@@ -741,7 +762,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCurrentTemp.setVisibility(View.VISIBLE);
         mWeatherImage.setVisibility(View.VISIBLE);
         mCurrentCondition.setVisibility(View.VISIBLE);
-        mLoadingIndicator.setVisibility(View.INVISIBLE);
+        mLoadingLayout.setVisibility(View.INVISIBLE);
     }
 
     private String getCurrentUnitSetting() {
