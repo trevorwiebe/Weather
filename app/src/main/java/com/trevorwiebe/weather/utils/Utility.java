@@ -26,6 +26,11 @@ public class Utility {
     public static final String IMPERIAL = "imperial";
     public static final String CELSIUS = "metric";
 
+    // Unit types that need to be converted
+    public static final int TEMPERATURE = 6;
+    public static final int DISTANCE = 7;
+    public static final int LENGTH = 8;
+
     // Check if is connected to the internet
     public static boolean isConnectedToInternet(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

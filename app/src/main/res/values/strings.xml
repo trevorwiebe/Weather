@@ -12,11 +12,14 @@
     <string name="feels_like">Feels like:</string>
     <string name="precipication">Precipitation in last 24 hrs:</string>
     <string name="visibility">Visibility:</string>
+    <string name="force_update">Refresh</string>
     <string name="celsius">\u2103</string>
     <string name="fahrenheit">\u2109</string>
     <string name="rate">Rate</string>
     <string name="open_menu">Open menu</string>
     <string name="settings">Settings</string>
+    <string name="wind_string">%1$s from the %2$s</string>
+    <string name="wind_string_gust">%1$s from the %2$s, gusting to %3$s</string>
 
     error text
     <string name="no_connection">No internet connection</string>
