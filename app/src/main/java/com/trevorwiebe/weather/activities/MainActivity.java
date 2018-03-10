@@ -81,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private TextView mDewpoint;
     private TextView mPressure;
     private TextView mCityAndState;
-    private TextView mLastUpdated;
     private TextView mHumidity;
     private TextView mPrecip;
     private TextView mVisibility;
@@ -113,7 +112,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mDewpoint = findViewById(R.id.dew_point_content);
         mPressure = findViewById(R.id.pressure_content);
         mCityAndState = findViewById(R.id.location_content);
-        mLastUpdated = findViewById(R.id.last_updated);
         mHumidity = findViewById(R.id.humidity_content);
         mWeatherImage = findViewById(R.id.weather_image);
 
@@ -516,7 +514,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mDewpoint.setText(finishedDewPoint);
         mPressure.setText(finishedPressure);
         mCityAndState.setText(location);
-        mLastUpdated.setText(lastUpdated);
         mHumidity.setText(humidity);
         mPrecip.setText(finishedPrecipitation);
         mFeelsLike.setText(finishedFeelsLike);
