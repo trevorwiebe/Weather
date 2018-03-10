@@ -184,9 +184,9 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 String longitude = Double.toString(location.getLongitude());
                 String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
                 showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
-                Log.d(TAG, "onLocationChanged: " + url);
                 new LoadWeatherData(MainActivity.this).execute(url);
 
+                // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
                 com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
                 SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
 
