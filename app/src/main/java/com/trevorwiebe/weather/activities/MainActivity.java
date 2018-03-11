@@ -41,7 +41,7 @@ import android.widget.TextView;
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.trevorwiebe.weather.R;
 import com.trevorwiebe.weather.utils.LoadWeatherData;
-import com.trevorwiebe.weather.utils.UnitLocale;
+import com.trevorwiebe.weather.utils.GetDeviceLocale;
 import com.trevorwiebe.weather.utils.Utility;
 
 import org.json.JSONException;
@@ -438,7 +438,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         switch (getCurrentUnitSetting()) {
             case Utility.AUTOMATIC:
-                if (UnitLocale.getDefault() == UnitLocale.Imperial) {
+                if (GetDeviceLocale.getDefault() == GetDeviceLocale.Imperial) {
                     tempIdentifier = getResources().getString(R.string.fahrenheit);
                     distanceIdentifier = " mi";
                     windIdentifier = " mph";
