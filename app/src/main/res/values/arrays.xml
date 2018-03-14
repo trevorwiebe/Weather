@@ -13,4 +13,12 @@
         <item>@string/unit_imperial_value</item>
     </string-array>
 
+    <string-array name="location_labels">
+        <item>@string/location_current_location_label</item>
+    </string-array>
+
+    <string-array name="location_values">
+        <item>@string/location_current_location_value</item>
+    </string-array>
+
 </resources>

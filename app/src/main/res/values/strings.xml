@@ -24,7 +24,7 @@
     error text
     <string name="no_connection">No internet connection</string>
     <string name="no_data_returned">No weather information returned</string>
-    <string name="data_returned_is_unknown">Data returned is in an unknown format. Please check for app updates</string>
+    <string name="data_returned_is_unknown">Data returned is in an unknown format and cannot be interpreted</string>
     <string name="turn_on_location">Please turn on location so Simple Weather can function correctly.</string>
     <string name="needs_permission">Simple Weather needs permission to access location. Your location is not stored and will only be used once when you first open the app to load the weather.</string>
     <string name="failed_to_get_location">Cannot determine location. Please try again in a few minutes</string>
@@ -33,8 +33,9 @@
     <string name="open_location">Turn on location</string>
 
     settings
-    <string name="settings_title">Units</string>
-    <string name="dialog_settings_title">Select a Unit</string>
+    <string name="unit_title">Units</string>
+    <string name="dialog_unit_title">Select a Unit</string>
+    <string name="unit_pref_key">unit_pref_key</string>
 
     <string name="unit_auto_value">automatic</string>
     <string name="unit_imperial_value">imperial</string>
@@ -43,6 +44,19 @@
     <string name="unit_auto_label">Automatic</string>
     <string name="unit_imperial_label">Imperial</string>
     <string name="unit_metric_label">Metric</string>
+
+    <string name="location_title">Location</string>
+    <string name="dialog_location_title">Select a Location</string>
+    <string name="location_pref_key">location_pref_key</string>
+
+    <string name="location_current_location_value">current_location</string>
+
+    <string name="location_current_location_label">Current Location</string>
+
+    <string name="add_new_location_title">Add new location</string>
+    <string name="add_new_location_summary">Please enter a city and state or zip code</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 
     loading info
     <string name="loading_inform_requesting_location">Getting the location of your device</string>

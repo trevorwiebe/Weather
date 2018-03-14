@@ -2,19 +2,19 @@ package com.trevorwiebe.weather.fragments;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.preference.CheckBoxPreference;
-import android.support.v7.preference.ListPreference;
-import android.support.v7.preference.Preference;
-import android.support.v7.preference.PreferenceFragmentCompat;
-import android.support.v7.preference.PreferenceScreen;
+import android.preference.ListPreference;
+import android.preference.Preference;
+import android.preference.PreferenceFragment;
+import android.preference.PreferenceScreen;
 
 import com.trevorwiebe.weather.R;
 
 
-public class SettingsFragment extends PreferenceFragmentCompat implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     @Override
-    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+    public void onCreate(Bundle saveInstanceState) {
+        super.onCreate(saveInstanceState);
 
         addPreferencesFromResource(R.xml.preferences);
 
@@ -24,11 +24,14 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
         for (int i = 0; i < count; i++) {
             Preference p = preferenceScreen.getPreference(i);
-            if (!(p instanceof CheckBoxPreference)) {
+            if (p instanceof ListPreference) {
                 String value = sharedPreferences.getString(p.getKey(), "");
                 setPreferenceSummary(p, value);
             }
         }
+
+        getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+
     }
 
     @Override
@@ -37,7 +40,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         Preference preference = findPreference(key);
         if (null != preference) {
             // Updates the summary for the preference
-            if (!(preference instanceof CheckBoxPreference)) {
+            if (preference instanceof ListPreference) {
                 String value = sharedPreferences.getString(preference.getKey(), "");
                 setPreferenceSummary(preference, value);
             }
@@ -45,17 +48,9 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        getPreferenceScreen().getSharedPreferences()
-                .registerOnSharedPreferenceChangeListener(this);
-    }
-
-    @Override
     public void onDestroy() {
         super.onDestroy();
-        getPreferenceScreen().getSharedPreferences()
-                .unregisterOnSharedPreferenceChangeListener(this);
+        getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
     }
 
     private void setPreferenceSummary(Preference preference, String value) {

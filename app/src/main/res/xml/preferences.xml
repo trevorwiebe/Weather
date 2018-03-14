@@ -3,9 +3,18 @@
 
     <ListPreference
         android:defaultValue="@string/unit_auto_value"
-        android:title="@string/settings_title"
+        android:title="@string/unit_title"
         android:key="settings_units"
-        android:dialogTitle="@string/dialog_settings_title"
+        android:dialogTitle="@string/dialog_unit_title"
         android:entries="@array/unit_labels"
         android:entryValues="@array/unit_values"/>
+
+    <com.trevorwiebe.weather.utils.AddLocationListPreference
+        android:defaultValue="@string/location_current_location_value"
+        android:title="@string/location_title"
+        android:key="@string/location_pref_key"
+        android:dialogTitle="@string/location_title"
+        android:entries="@array/location_labels"
+        android:entryValues="@array/location_values" />
+
 </PreferenceScreen>
