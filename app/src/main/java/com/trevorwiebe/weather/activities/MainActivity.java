@@ -26,7 +26,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -258,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     public void refresh(View view) {
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         mWeatherMap.clear();
-        determineLocation();
+        determineWhatTypeOfLocationAndBeginLoading();
     }
 
     @Override
@@ -284,35 +283,42 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     private void loadCurrentWeatherConditions(@Nullable Location location) {
 
-        showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
+        String selectedLocation = getCurrentLocationSetting();
+        String lastLoadedLocation = mWeatherMap.get("selectedLocation");
 
-        String url;
-        if (location == null) {
-            url = Utility.BASE_URL + getCurrentLocationSetting() + ".json";
+        if (mWeatherMap.size() == 0 || mWeatherMap == null || !selectedLocation.equals(lastLoadedLocation)) {
+            showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
+
+            String url;
+            if (location == null) {
+                url = Utility.BASE_URL + getCurrentLocationSetting() + ".json";
+            } else {
+                String latitude = Double.toString(location.getLatitude());
+                String longitude = Double.toString(location.getLongitude());
+                url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+
+                // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
+                com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
+                SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
+
+                Calendar calendar = Calendar.getInstance();
+
+                Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
+                Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
+
+                long sunsetMillis = officialSunset.getTimeInMillis();
+                long sunriseMillis = officialSunrise.getTimeInMillis();
+                long currentTime = calendar.getTimeInMillis();
+
+                isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
+
+            }
+
+            new LoadWeatherData(MainActivity.this).execute(url);
+
         } else {
-            String latitude = Double.toString(location.getLatitude());
-            String longitude = Double.toString(location.getLongitude());
-            url = Utility.BASE_URL + latitude + "," + longitude + ".json";
-
-            // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
-            com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
-            SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
-
-            Calendar calendar = Calendar.getInstance();
-
-            Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
-            Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
-
-            long sunsetMillis = officialSunset.getTimeInMillis();
-            long sunriseMillis = officialSunrise.getTimeInMillis();
-            long currentTime = calendar.getTimeInMillis();
-
-            isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
-
+            putDataInViews();
         }
-
-        Log.d(TAG, "loadCurrentWeatherConditions: " + url);
-        new LoadWeatherData(MainActivity.this).execute(url);
 
     }
 
@@ -357,7 +363,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     }
 
     private void parseData(String rawData) {
-        Log.d(TAG, "parseData: " + rawData);
         if (rawData == null || rawData.equals("")) {
             showErrorMessage(Utility.NO_DATA_RETURNED);
         } else {
