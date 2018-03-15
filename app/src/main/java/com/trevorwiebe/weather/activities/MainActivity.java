@@ -42,7 +42,6 @@ import android.widget.TextView;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.trevorwiebe.weather.R;
-import com.trevorwiebe.weather.objects.LatLng;
 import com.trevorwiebe.weather.utils.GetDeviceLocale;
 import com.trevorwiebe.weather.utils.LoadWeatherData;
 import com.trevorwiebe.weather.utils.Utility;
@@ -302,24 +301,24 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                                 Geocoder gc = new Geocoder(MainActivity.this);
                                 List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
 
-                                for (Address a : addresses) {
-                                    if (a.hasLatitude() && a.hasLongitude()) {
-                                        LatLng latLng = new LatLng(Double.toString(a.getLatitude()), Double.toString(a.getLongitude()));
+                                Address a = addresses.get(0);
 
-                                        String latitude = latLng.getLatitude();
-                                        String longitude = latLng.getLongitude();
+                                if (a.hasLatitude() && a.hasLongitude()) {
+                                    String latitude = Double.toString(a.getLatitude());
+                                    String longitude = Double.toString(a.getLongitude());
 
-                                        determineIfTheSunIsUp(latitude, longitude);
-                                        break;
-                                    }
+                                    determineIfTheSunIsUp(latitude, longitude);
+                                } else {
+                                    determineIfTheSunIsUp("38.5", "-97.5");
                                 }
                             } catch (IOException e) {
-                                // handle the exception
+                                determineIfTheSunIsUp("38.5", "-97.5");
                             }
+                        } else {
+                            determineIfTheSunIsUp("38.5", "-97.5");
                         }
                     }
                 }).start();
-
             } else {
                 String latitude = Double.toString(location.getLatitude());
                 String longitude = Double.toString(location.getLongitude());
