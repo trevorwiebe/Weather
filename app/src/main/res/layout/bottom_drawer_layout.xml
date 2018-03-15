@@ -95,14 +95,13 @@
         android:id="@+id/dewpoint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="@string/dewpoint"
         android:textColor="@android:color/darker_gray"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/location_content"/>
+        app:layout_constraintTop_toBottomOf="@+id/feels_like_content" />
 
     <TextView
         android:id="@+id/humidity_content"
@@ -118,7 +117,7 @@
 
     <TextView
         android:id="@+id/dew_point_content"
-        android:layout_width="0dp"
+        android:layout_width="87dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -126,7 +125,7 @@
         android:textSize="18sp"
         app:layout_constraintBaseline_toBaselineOf="@+id/dewpoint"
         app:layout_constraintEnd_toStartOf="@+id/guideline2"
-        app:layout_constraintStart_toEndOf="@+id/dewpoint"/>
+        app:layout_constraintStart_toEndOf="@+id/dewpoint" />
 
 
     <TextView
@@ -144,14 +143,13 @@
         android:id="@+id/city_and_state"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="@string/city_and_state"
         android:textColor="@android:color/darker_gray"
         android:textSize="18sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/feels_like_content"/>
+        app:layout_constraintTop_toBottomOf="@+id/dew_point_content" />
 
     <TextView
         android:id="@+id/pressure_content"
@@ -167,7 +165,7 @@
 
     <TextView
         android:id="@+id/location_content"
-        android:layout_width="0dp"
+        android:layout_width="96dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -175,7 +173,7 @@
         android:textSize="18sp"
         app:layout_constraintBaseline_toBaselineOf="@+id/city_and_state"
         app:layout_constraintEnd_toStartOf="@+id/guideline2"
-        app:layout_constraintStart_toEndOf="@+id/city_and_state"/>
+        app:layout_constraintStart_toEndOf="@+id/city_and_state" />
 
     <TextView
         android:id="@+id/feels_like"
