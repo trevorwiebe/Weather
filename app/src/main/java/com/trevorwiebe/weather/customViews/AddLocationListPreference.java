@@ -15,7 +15,6 @@ import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -157,26 +156,26 @@ public class AddLocationListPreference extends ListPreference {
 
     private CharSequence[] getLocationEntries() {
 
-        if (mLocationArr.size() == 0) {
-            mLocationArr.add("Current Location");
 
-            SQLiteDatabase database = mWeatherHelper.getReadableDatabase();
-            Cursor locationCursor = database.query(WeatherContract.LocationEntry.TABLE_NAME,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null);
+        mLocationArr.clear();
+        mLocationArr.add("Current Location");
 
-            locationCursor.moveToFirst();
-            while (locationCursor.moveToNext()) {
-                String location = locationCursor.getString(locationCursor.getColumnIndex(WeatherContract.LocationEntry.DISPLAY_LOCATION));
-                mLocationArr.add(location);
-            }
-            locationCursor.close();
+        SQLiteDatabase database = mWeatherHelper.getReadableDatabase();
+        Cursor locationCursor = database.query(WeatherContract.LocationEntry.TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        while (locationCursor.moveToNext()) {
+            String location = locationCursor.getString(locationCursor.getColumnIndex(WeatherContract.LocationEntry.DISPLAY_LOCATION));
+            mLocationArr.add(location);
         }
+        locationCursor.close();
+
         return mLocationArr.toArray(new CharSequence[mLocationArr.size()]);
     }
 
@@ -186,6 +185,8 @@ public class AddLocationListPreference extends ListPreference {
 
         getLocationEntries();
 
-        return mLocationArr.indexOf(currentSelection);
+        int index = mLocationArr.indexOf(currentSelection);
+        if (index == -1) return 0;
+        return index;
     }
 }

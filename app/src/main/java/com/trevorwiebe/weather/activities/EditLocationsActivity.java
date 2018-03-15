@@ -2,9 +2,11 @@ package com.trevorwiebe.weather.activities;
 
 import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -22,6 +24,8 @@ import com.trevorwiebe.weather.database.WeatherSQLHelper;
 import com.trevorwiebe.weather.utils.ItemClickListener;
 
 public class EditLocationsActivity extends AppCompatActivity {
+
+    private static final String TAG = "EditLocationsActivity";
 
     private SQLiteDatabase mDatabase;
     private String mSelectedId;
@@ -126,8 +130,20 @@ public class EditLocationsActivity extends AppCompatActivity {
     }
 
     private void deleteSelectedLocation(String id) {
+
+        String locationDeleted = getSelectedText(id);
+
         int numDeleted = mDatabase.delete(WeatherContract.LocationEntry.TABLE_NAME, WeatherContract.LocationEntry._ID + " = " + id, null);
         if (numDeleted > 0) {
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+            String currentSelection = sharedPreferences.getString(getResources().getString(R.string.location_pref_key), getResources().getString(R.string.location_current_location_label));
+
+            if (locationDeleted.equals(currentSelection)) {
+                SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+                SharedPreferences.Editor editor = sharedPrefs.edit();
+                editor.putString(getString(R.string.location_pref_key), getString(R.string.location_current_location_label));
+                editor.apply();
+            }
             Toast.makeText(this, getResources().getString(R.string.location_deleted_successfully), Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, getResources().getString(R.string.location_not_deleted), Toast.LENGTH_SHORT).show();
