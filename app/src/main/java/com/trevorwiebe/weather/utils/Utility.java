@@ -23,9 +23,9 @@ public class Utility {
     public static final int LOCATION_NOT_RECOGNIZED = 6;
 
     // Unit settings strings
-    public static final String AUTOMATIC = "automatic";
-    public static final String IMPERIAL = "imperial";
-    public static final String CELSIUS = "metric";
+    public static final String AUTOMATIC = "Automatic";
+    public static final String IMPERIAL = "Imperial";
+    public static final String CELSIUS = "Metric";
 
     // Unit types that need to be converted
     public static final int TEMPERATURE = 7;

@@ -58,11 +58,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
             // For list preferences, figure out the label of the selected value
             ListPreference listPreference = (ListPreference) preference;
             listPreference.setSummary(value);
-            int prefIndex = listPreference.findIndexOfValue(value);
-            if (prefIndex >= 0) {
-                // Set the summary to that label
-                listPreference.setSummary(listPreference.getEntries()[prefIndex]);
-            }
+
         }
     }
 }

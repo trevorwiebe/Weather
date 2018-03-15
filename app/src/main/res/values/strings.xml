@@ -40,9 +40,9 @@
     <string name="dialog_unit_title">Select a Unit</string>
     <string name="unit_pref_key">unit_pref_key</string>
 
-    <string name="unit_auto_value">automatic</string>
-    <string name="unit_imperial_value">imperial</string>
-    <string name="unit_metric_value">metric</string>
+    <string name="unit_auto_value">Automatic</string>
+    <string name="unit_imperial_value">Imperial</string>
+    <string name="unit_metric_value">Metric</string>
 
     <string name="unit_auto_label">Automatic</string>
     <string name="unit_imperial_label">Imperial</string>
@@ -52,7 +52,7 @@
     <string name="dialog_location_title">Select a Location</string>
     <string name="location_pref_key">location_pref_key</string>
 
-    <string name="location_current_location_value">current_location</string>
+    <string name="location_current_location_value">Current Location</string>
 
     <string name="location_current_location_label">Current Location</string>
 

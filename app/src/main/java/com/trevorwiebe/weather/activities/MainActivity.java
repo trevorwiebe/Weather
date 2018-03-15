@@ -864,7 +864,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     private String getCurrentUnitSetting() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        return sharedPreferences.getString("settings_units", getResources().getString(R.string.unit_auto_value));
+        return sharedPreferences.getString(getResources().getString(R.string.unit_pref_key), getResources().getString(R.string.unit_auto_value));
     }
 
     private String getCurrentLocationSetting() {
