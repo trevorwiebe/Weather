@@ -10,6 +10,8 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -40,6 +42,7 @@ import android.widget.TextView;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.trevorwiebe.weather.R;
+import com.trevorwiebe.weather.objects.LatLng;
 import com.trevorwiebe.weather.utils.GetDeviceLocale;
 import com.trevorwiebe.weather.utils.LoadWeatherData;
 import com.trevorwiebe.weather.utils.Utility;
@@ -47,8 +50,10 @@ import com.trevorwiebe.weather.utils.Utility;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 
 //public class MainActivity extends AppCompatActivity  {
 
@@ -283,42 +288,69 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     private void loadCurrentWeatherConditions(@Nullable Location location) {
 
-        String selectedLocation = getCurrentLocationSetting();
+        final String selectedLocation = getCurrentLocationSetting();
         String lastLoadedLocation = mWeatherMap.get("selectedLocation");
 
         if (mWeatherMap.size() == 0 || mWeatherMap == null || !selectedLocation.equals(lastLoadedLocation)) {
             showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
 
-            String url;
             if (location == null) {
-                url = Utility.BASE_URL + getCurrentLocationSetting() + ".json";
+                new Thread(new Runnable() {
+                    public void run() {
+                        if (Geocoder.isPresent()) {
+                            try {
+                                Geocoder gc = new Geocoder(MainActivity.this);
+                                List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
+
+                                for (Address a : addresses) {
+                                    if (a.hasLatitude() && a.hasLongitude()) {
+                                        LatLng latLng = new LatLng(Double.toString(a.getLatitude()), Double.toString(a.getLongitude()));
+
+                                        String latitude = latLng.getLatitude();
+                                        String longitude = latLng.getLongitude();
+
+                                        determineIfTheSunIsUp(latitude, longitude);
+                                        break;
+                                    }
+                                }
+                            } catch (IOException e) {
+                                // handle the exception
+                            }
+                        }
+                    }
+                }).start();
+
             } else {
                 String latitude = Double.toString(location.getLatitude());
                 String longitude = Double.toString(location.getLongitude());
-                url = Utility.BASE_URL + latitude + "," + longitude + ".json";
-
-                // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
-                com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
-                SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
-
-                Calendar calendar = Calendar.getInstance();
-
-                Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
-                Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
-
-                long sunsetMillis = officialSunset.getTimeInMillis();
-                long sunriseMillis = officialSunrise.getTimeInMillis();
-                long currentTime = calendar.getTimeInMillis();
-
-                isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
-
+                determineIfTheSunIsUp(latitude, longitude);
             }
-
-            new LoadWeatherData(MainActivity.this).execute(url);
-
         } else {
             putDataInViews();
         }
+
+    }
+
+    private void determineIfTheSunIsUp(String latitude, String longitude) {
+
+        String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+
+        // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
+        com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
+        SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
+
+        Calendar calendar = Calendar.getInstance();
+
+        Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
+        Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
+
+        long sunsetMillis = officialSunset.getTimeInMillis();
+        long sunriseMillis = officialSunrise.getTimeInMillis();
+        long currentTime = calendar.getTimeInMillis();
+
+        isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
+
+        new LoadWeatherData(MainActivity.this).execute(url);
 
     }
 
