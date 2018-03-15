@@ -26,6 +26,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -310,6 +311,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         }
 
+        Log.d(TAG, "loadCurrentWeatherConditions: " + url);
         new LoadWeatherData(MainActivity.this).execute(url);
 
     }
@@ -355,6 +357,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     }
 
     private void parseData(String rawData) {
+        Log.d(TAG, "parseData: " + rawData);
         if (rawData == null || rawData.equals("")) {
             showErrorMessage(Utility.NO_DATA_RETURNED);
         } else {
@@ -711,10 +714,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         switch (errorCode) {
             case Utility.JSON_PARSING_FAILED:
                 errorMessage = getResources().getString(R.string.data_returned_is_unknown);
+                buttonText = getResources().getString(R.string.update_settings);
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        determineWhatTypeOfLocationAndBeginLoading();
+                        Intent setNewLocationIntent = new Intent(MainActivity.this, SettingsActivity.class);
+                        startActivity(setNewLocationIntent);
                     }
                 };
                 break;

@@ -24,7 +24,7 @@
     error text
     <string name="no_connection">No internet connection</string>
     <string name="no_data_returned">No weather information returned</string>
-    <string name="data_returned_is_unknown">Data returned is in an unknown format and cannot be interpreted</string>
+    <string name="data_returned_is_unknown">Data returned cannot be interpreted. It could be that the city you entered can\'t be found or the data returned is corrupted</string>
     <string name="turn_on_location">Please turn on location so Simple Weather can function correctly.</string>
     <string name="needs_permission">Simple Weather needs permission to access location. Your location is not stored and will only be used once when you first open the app to load the weather.</string>
     <string name="failed_to_get_location">Cannot determine location. Please try again in a few minutes</string>
@@ -33,6 +33,7 @@
     <string name="open_location">Turn on location</string>
     <string name="location_not_found">There were no cities that match your search</string>
     <string name="location_not_found_btn_text">Set new location</string>
+    <string name="update_settings">Update settings</string>
 
     settings
     <string name="unit_title">Units</string>
