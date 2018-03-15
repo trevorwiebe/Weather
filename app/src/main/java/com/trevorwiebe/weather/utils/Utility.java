@@ -20,6 +20,7 @@ public class Utility {
     public static final int NO_INTERNET_CONNECTION = 3;
     public static final int LOCATIONS_NOT_TURNED_ON = 4;
     public static final int FAILED_TO_GET_LOCATION = 5;
+    public static final int LOCATION_NOT_RECOGNIZED = 6;
 
     // Unit settings strings
     public static final String AUTOMATIC = "automatic";
@@ -27,9 +28,9 @@ public class Utility {
     public static final String CELSIUS = "metric";
 
     // Unit types that need to be converted
-    public static final int TEMPERATURE = 6;
-    public static final int DISTANCE = 7;
-    public static final int LENGTH = 8;
+    public static final int TEMPERATURE = 7;
+    public static final int DISTANCE = 8;
+    public static final int LENGTH = 9;
 
     // Check if is connected to the internet
     public static boolean isConnectedToInternet(Context context) {

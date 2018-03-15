@@ -19,13 +19,13 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -40,8 +40,8 @@ import android.widget.TextView;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.trevorwiebe.weather.R;
-import com.trevorwiebe.weather.utils.LoadWeatherData;
 import com.trevorwiebe.weather.utils.GetDeviceLocale;
+import com.trevorwiebe.weather.utils.LoadWeatherData;
 import com.trevorwiebe.weather.utils.Utility;
 
 import org.json.JSONException;
@@ -174,33 +174,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         mLocationManager = (LocationManager) this.getSystemService(LOCATION_SERVICE);
 
+        // this location listener is call when determineLocation is called
         mLocationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
 
                 mLocationManager.removeUpdates(mLocationListener);
-
-                String latitude = Double.toString(location.getLatitude());
-                String longitude = Double.toString(location.getLongitude());
-                String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
-                showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
-                new LoadWeatherData(MainActivity.this).execute(url);
-
-                // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
-                com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
-                SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
-
-                Calendar calendar = Calendar.getInstance();
-
-                Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
-                Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
-
-                long sunsetMillis = officialSunset.getTimeInMillis();
-                long sunriseMillis = officialSunrise.getTimeInMillis();
-                long currentTime = calendar.getTimeInMillis();
-
-                isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
-
+                loadCurrentWeatherConditions(location);
             }
 
             @Override
@@ -222,7 +202,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     @Override
     protected void onResume() {
-        loadFreshWeatherData();
+        determineWhatTypeOfLocationAndBeginLoading();
         super.onResume();
     }
 
@@ -277,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     public void refresh(View view) {
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         mWeatherMap.clear();
-        loadFreshWeatherData();
+        determineLocation();
     }
 
     @Override
@@ -301,9 +281,51 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         }
     }
 
-    public void loadFreshWeatherData() {
+    private void loadCurrentWeatherConditions(@Nullable Location location) {
 
-        if (mWeatherMap.size() == 0 || mWeatherMap == null) {
+        showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
+
+        String url;
+        if (location == null) {
+            url = Utility.BASE_URL + getCurrentLocationSetting() + ".json";
+        } else {
+            String latitude = Double.toString(location.getLatitude());
+            String longitude = Double.toString(location.getLongitude());
+            url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+
+            // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
+            com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
+            SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
+
+            Calendar calendar = Calendar.getInstance();
+
+            Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
+            Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
+
+            long sunsetMillis = officialSunset.getTimeInMillis();
+            long sunriseMillis = officialSunrise.getTimeInMillis();
+            long currentTime = calendar.getTimeInMillis();
+
+            isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
+
+        }
+
+        new LoadWeatherData(MainActivity.this).execute(url);
+
+    }
+
+    private void determineWhatTypeOfLocationAndBeginLoading() {
+        String location = getCurrentLocationSetting();
+        if (location.equals("Current Location")) {
+            determineLocation();
+        } else {
+            loadCurrentWeatherConditions(null);
+        }
+    }
+
+    public void determineLocation() {
+
+        if (mWeatherMap.size() == 0 || mWeatherMap == null || !mWeatherMap.get("selectedLocation").equals("Current Location")) {
 
             showLoading(getResources().getString(R.string.loading_inform_requesting_location));
 
@@ -311,7 +333,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 if (Utility.isConnectedToInternet(this)) {
                     if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                         if (mLocationManager != null) {
-                            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, mLocationListener);
+                            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, mLocationListener);
                         }
                     } else {
                         if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -329,6 +351,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         } else {
             putDataInViews();
         }
+
     }
 
     private void parseData(String rawData) {
@@ -346,6 +369,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 JSONObject baseJsonObject = new JSONObject(rawData);
                 JSONObject currentObservationObject = baseJsonObject.getJSONObject("current_observation");
 
+                mWeatherMap.put("selectedLocation", getCurrentLocationSetting());
                 mWeatherMap.put("weather", currentObservationObject.getString("weather"));
                 mWeatherMap.put("pressure", currentObservationObject.getString("pressure_in"));
                 mWeatherMap.put("last_updated", currentObservationObject.getString("observation_time"));
@@ -367,7 +391,19 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 mWeatherMap.put("feelslike", currentObservationObject.getString("feelslike_f"));
 
             } catch (JSONException e) {
-                showErrorMessage(Utility.JSON_PARSING_FAILED);
+                try {
+                    JSONObject baseJsonObject = new JSONObject(rawData);
+                    JSONObject responseObject = baseJsonObject.getJSONObject("response");
+                    JSONObject errorObject = responseObject.getJSONObject("error");
+                    String type = errorObject.getString("type");
+                    if (type.equals("querynotfound")) {
+                        showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
+                    } else {
+                        showErrorMessage(Utility.JSON_PARSING_FAILED);
+                    }
+                } catch (JSONException e2) {
+                    showErrorMessage(Utility.JSON_PARSING_FAILED);
+                }
             }
         }
     }
@@ -522,8 +558,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         // set background colors
         double temp = Float.parseFloat(mWeatherMap.get("temp_f"));
 
-
-        Log.d(TAG, "putDataInViews: " + temp);
         int blue = getResources().getColor(R.color.blue);
         int red = getResources().getColor(R.color.red);
         float colorRatio;
@@ -680,7 +714,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        loadFreshWeatherData();
+                        determineWhatTypeOfLocationAndBeginLoading();
                     }
                 };
                 break;
@@ -689,7 +723,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        loadFreshWeatherData();
+                        determineWhatTypeOfLocationAndBeginLoading();
+
                     }
                 };
                 break;
@@ -718,7 +753,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        loadFreshWeatherData();
+                        determineWhatTypeOfLocationAndBeginLoading();
                     }
                 };
                 break;
@@ -727,7 +762,18 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        loadFreshWeatherData();
+                        determineWhatTypeOfLocationAndBeginLoading();
+                    }
+                };
+                break;
+            case Utility.LOCATION_NOT_RECOGNIZED:
+                errorMessage = getResources().getString(R.string.location_not_found);
+                buttonText = getResources().getString(R.string.location_not_found_btn_text);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent setNewLocationIntent = new Intent(MainActivity.this, SettingsActivity.class);
+                        startActivity(setNewLocationIntent);
                     }
                 };
                 break;
@@ -736,7 +782,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        loadFreshWeatherData();
+                        determineWhatTypeOfLocationAndBeginLoading();
                     }
                 };
                 break;
@@ -778,6 +824,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private String getCurrentUnitSetting() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         return sharedPreferences.getString("settings_units", getResources().getString(R.string.unit_auto_value));
+    }
+
+    private String getCurrentLocationSetting() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        return sharedPreferences.getString(getResources().getString(R.string.location_pref_key), getResources().getString(R.string.location_current_location_label));
     }
 
     private String convertToMetric(String value, int type) {
