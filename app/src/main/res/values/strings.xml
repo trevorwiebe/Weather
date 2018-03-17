@@ -34,6 +34,7 @@
     <string name="location_not_found">There were no cities that match your search</string>
     <string name="location_not_found_btn_text">Set new location</string>
     <string name="update_settings">Update settings</string>
+    <string name="no_saved_locations">No saved locations</string>
 
     settings
     <string name="unit_title">Units</string>

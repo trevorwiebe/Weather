@@ -30,6 +30,8 @@ public class EditLocationsActivity extends AppCompatActivity {
     private SQLiteDatabase mDatabase;
     private String mSelectedId;
 
+    private TextView mNoLocationsTv;
+    private RecyclerView mLocationsRv;
     private EditLocationsRecyclerViewAdapter mEditLocationsRecyclerViewAdapter;
 
     @Override
@@ -39,11 +41,13 @@ public class EditLocationsActivity extends AppCompatActivity {
 
         mDatabase = new WeatherSQLHelper(this).getReadableDatabase();
 
-        RecyclerView editLocationsRv = findViewById(R.id.edit_locations_rv);
-        editLocationsRv.setLayoutManager(new LinearLayoutManager(this));
-        mEditLocationsRecyclerViewAdapter = new EditLocationsRecyclerViewAdapter(this, getLocations());
-        editLocationsRv.setAdapter(mEditLocationsRecyclerViewAdapter);
-        editLocationsRv.addOnItemTouchListener(new ItemClickListener(this, editLocationsRv, new ItemClickListener.OnItemClickListener() {
+        mNoLocationsTv = findViewById(R.id.no_locations_tv);
+
+        mLocationsRv = findViewById(R.id.edit_locations_rv);
+        mLocationsRv.setLayoutManager(new LinearLayoutManager(this));
+        mEditLocationsRecyclerViewAdapter = new EditLocationsRecyclerViewAdapter(this, null);
+        mLocationsRv.setAdapter(mEditLocationsRecyclerViewAdapter);
+        mLocationsRv.addOnItemTouchListener(new ItemClickListener(this, mLocationsRv, new ItemClickListener.OnItemClickListener() {
             @Override
             public void onItemClick(View view, int position) {
                 AlertDialog.Builder editLocation = new AlertDialog.Builder(EditLocationsActivity.this);
@@ -66,14 +70,14 @@ public class EditLocationsActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         String updatedLocation = editLocationEditText.getText().toString();
                         updateLocation(updatedLocation, mSelectedId);
-                        mEditLocationsRecyclerViewAdapter.swapData(getLocations());
+                        refreshView();
                     }
                 });
                 editLocation.setNeutralButton(getResources().getString(R.string.delete), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         deleteSelectedLocation(mSelectedId);
-                        mEditLocationsRecyclerViewAdapter.swapData(getLocations());
+                        refreshView();
                     }
                 });
                 editLocation.show();
@@ -84,6 +88,9 @@ public class EditLocationsActivity extends AppCompatActivity {
 
             }
         }));
+
+        refreshView();
+
     }
 
     @Override
@@ -119,6 +126,17 @@ public class EditLocationsActivity extends AppCompatActivity {
     }
 
     private void updateLocation(String updatedLocation, String id) {
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String currentSelection = sharedPreferences.getString(getResources().getString(R.string.location_pref_key), getResources().getString(R.string.location_current_location_label));
+        String locationInDb = getSelectedText(id);
+
+        if (locationInDb.equals(currentSelection)) {
+            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+            SharedPreferences.Editor editor = sharedPrefs.edit();
+            editor.putString(getString(R.string.location_pref_key), updatedLocation);
+            editor.apply();
+        }
         ContentValues cv = new ContentValues();
         cv.put(WeatherContract.LocationEntry.DISPLAY_LOCATION, updatedLocation);
         int numsUpdated = mDatabase.update(WeatherContract.LocationEntry.TABLE_NAME, cv, WeatherContract.LocationEntry._ID + " = " + id, null);
@@ -147,6 +165,17 @@ public class EditLocationsActivity extends AppCompatActivity {
             Toast.makeText(this, getResources().getString(R.string.location_deleted_successfully), Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, getResources().getString(R.string.location_not_deleted), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void refreshView() {
+        if (getLocations().getCount() == 0) {
+            mLocationsRv.setVisibility(View.GONE);
+            mNoLocationsTv.setVisibility(View.VISIBLE);
+        } else {
+            mLocationsRv.setVisibility(View.VISIBLE);
+            mNoLocationsTv.setVisibility(View.GONE);
+            mEditLocationsRecyclerViewAdapter.swapData(getLocations());
         }
     }
 

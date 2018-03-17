@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="com.trevorwiebe.weather.activities.EditLocationsActivity">
 
     <android.support.v7.widget.RecyclerView
@@ -13,4 +13,15 @@
 
     </android.support.v7.widget.RecyclerView>
 
-</LinearLayout>
+
+    <TextView
+        android:id="@+id/no_locations_tv"
+        android:text="@string/no_saved_locations"
+        android:textSize="18sp"
+        android:layout_margin="24dp"
+        android:layout_gravity="center_horizontal"
+        android:textColor="@android:color/darker_gray"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</FrameLayout>
