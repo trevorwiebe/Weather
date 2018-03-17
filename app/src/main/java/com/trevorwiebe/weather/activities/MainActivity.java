@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished {
 
@@ -358,9 +359,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
         String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
 
-        // TODO: 3/9/2018 get the time zone to put it in here instead of hard coding it in
         com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
-        SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, "GMT-0600");
+        SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, TimeZone.getDefault());
 
         Calendar calendar = Calendar.getInstance();
 
