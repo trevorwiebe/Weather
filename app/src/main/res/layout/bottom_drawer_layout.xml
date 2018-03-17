@@ -41,14 +41,13 @@
 
         </LinearLayout>
 
-
         <ImageButton
             android:layout_weight="1"
             android:contentDescription="@string/open_menu"
             android:onClick="openMenu"
             android:background="@null"
             android:padding="13dp"
-            android:src="@drawable/ic_more_vert_black_24dp"
+            android:src="@drawable/ic_settings_black_24dp"
             android:layout_width="0dp"
             android:layout_height="wrap_content"/>
 
@@ -96,6 +95,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
         android:layout_marginTop="16dp"
         android:text="@string/dewpoint"
         android:textColor="@android:color/darker_gray"
@@ -117,7 +117,7 @@
 
     <TextView
         android:id="@+id/dew_point_content"
-        android:layout_width="87dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -144,6 +144,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
         android:layout_marginTop="16dp"
         android:text="@string/city_and_state"
         android:textColor="@android:color/darker_gray"
@@ -165,7 +166,7 @@
 
     <TextView
         android:id="@+id/location_content"
-        android:layout_width="96dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -268,8 +269,18 @@
         android:background="@drawable/button_border"
         android:text="@string/force_update"
         android:textColor="@color/colorPrimary"
+        app:layout_constraintBottom_toTopOf="@id/bottom_horizontal_pb"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ProgressBar
+        android:id="@+id/bottom_horizontal_pb"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="7dp"
+        android:indeterminate="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

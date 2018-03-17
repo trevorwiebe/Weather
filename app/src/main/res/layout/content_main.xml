@@ -33,10 +33,10 @@
     <Button
         android:id="@+id/more_information_btn"
         style="?android:attr/borderlessButtonStyle"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:padding="15dp"
+        android:padding="24dp"
         android:text="@string/more_information"
         android:textAllCaps="false"
         android:textColor="@color/white"/>
@@ -75,5 +75,13 @@
         android:layout_height="match_parent">
 
     </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/horizontal_pb"
+        android:layout_width="match_parent"
+        android:layout_height="7dp"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_gravity="bottom"
+        android:indeterminate="true" />
 
 </FrameLayout>

@@ -28,8 +28,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.ColorUtils;
 import android.support.v7.app.AppCompatActivity;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -37,7 +35,7 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
@@ -56,7 +54,7 @@ import java.util.List;
 
 //public class MainActivity extends AppCompatActivity  {
 
-public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished, PopupMenu.OnMenuItemClickListener {
+public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished {
 
     private static final String TAG = "MainActivity";
 
@@ -89,6 +87,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private TextView mPrecip;
     private TextView mVisibility;
     private TextView mFeelsLike;
+    private ProgressBar mBottomSheetHorizontalPb;
+    private ProgressBar mHorizontalPb;
     private ImageView mWeatherImage;
 
     @Override
@@ -118,6 +118,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCityAndState = findViewById(R.id.location_content);
         mHumidity = findViewById(R.id.humidity_content);
         mWeatherImage = findViewById(R.id.weather_image);
+        mBottomSheetHorizontalPb = findViewById(R.id.bottom_horizontal_pb);
+        mHorizontalPb = findViewById(R.id.horizontal_pb);
+
+        mBottomSheetHorizontalPb.setScaleY(3f);
+        mHorizontalPb.setScaleY(3f);
+
+        hideSubtleLoading();
 
         mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
 
@@ -251,29 +258,14 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     }
 
     public void openMenu(View view) {
-        PopupMenu popupMenu = new PopupMenu(this, view);
-        MenuInflater inflater = popupMenu.getMenuInflater();
-        inflater.inflate(R.menu.menu, popupMenu.getMenu());
-        popupMenu.setOnMenuItemClickListener(this);
-        popupMenu.show();
+        Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
+        startActivity(settingsIntent);
     }
 
     public void refresh(View view) {
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         mWeatherMap.clear();
         determineWhatTypeOfLocationAndBeginLoading();
-    }
-
-    @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_settings:
-                Intent settings_intent = new Intent(MainActivity.this, SettingsActivity.class);
-                startActivity(settings_intent);
-                return true;
-            default:
-                return false;
-        }
     }
 
     @Override
@@ -294,31 +286,32 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
 
             if (location == null) {
-                new Thread(new Runnable() {
-                    public void run() {
-                        if (Geocoder.isPresent()) {
-                            try {
-                                Geocoder gc = new Geocoder(MainActivity.this);
-                                List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
+                if (Geocoder.isPresent()) {
+                    try {
+                        Geocoder gc = new Geocoder(MainActivity.this);
+                        List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
 
-                                Address a = addresses.get(0);
-
-                                if (a.hasLatitude() && a.hasLongitude()) {
-                                    String latitude = Double.toString(a.getLatitude());
-                                    String longitude = Double.toString(a.getLongitude());
-
-                                    determineIfTheSunIsUp(latitude, longitude);
-                                } else {
-                                    determineIfTheSunIsUp("38.5", "-97.5");
-                                }
-                            } catch (IOException e) {
-                                determineIfTheSunIsUp("38.5", "-97.5");
-                            }
-                        } else {
-                            determineIfTheSunIsUp("38.5", "-97.5");
+                        if (addresses.size() == 0) {
+                            showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
+                            return;
                         }
+
+                        Address a = addresses.get(0);
+
+                        if (a.hasLatitude() && a.hasLongitude()) {
+                            String latitude = Double.toString(a.getLatitude());
+                            String longitude = Double.toString(a.getLongitude());
+
+                            determineIfTheSunIsUp(latitude, longitude);
+                        } else {
+                            showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
+                        }
+                    } catch (IOException e) {
+                        showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
                     }
-                }).start();
+                } else {
+                    showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
+                }
             } else {
                 String latitude = Double.toString(location.getLatitude());
                 String longitude = Double.toString(location.getLongitude());
@@ -851,6 +844,16 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mCurrentCondition.setVisibility(View.INVISIBLE);
         mLoadingLayout.setVisibility(View.VISIBLE);
         mLoadingInform.setText(loadingInform);
+    }
+
+    private void showSubtleLoading() {
+        mHorizontalPb.setVisibility(View.VISIBLE);
+        mBottomSheetHorizontalPb.setVisibility(View.VISIBLE);
+    }
+
+    private void hideSubtleLoading() {
+        mHorizontalPb.setVisibility(View.INVISIBLE);
+        mBottomSheetHorizontalPb.setVisibility(View.INVISIBLE);
     }
 
     private void showContent() {
