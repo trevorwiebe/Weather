@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -95,6 +96,7 @@ public class AddLocationListPreference extends ListPreference {
                     @Override
                     public void onTextChanged(CharSequence s, int start, int before, int count) {
                         int charCount = s.length();
+                        Log.d(TAG, "onTextChanged: " + s.toString());
                         if (charCount > 3) {
                             Button positiveBtn = editBtnsDialog.getButton(DialogInterface.BUTTON_POSITIVE);
                             if (positiveBtn != null) {
@@ -110,7 +112,12 @@ public class AddLocationListPreference extends ListPreference {
 
                     @Override
                     public void afterTextChanged(Editable s) {
-
+                        if (s.toString().equals(getContext().getResources().getString(R.string.location_current_location_label))) {
+                            Button positiveBtn = editBtnsDialog.getButton(DialogInterface.BUTTON_POSITIVE);
+                            if (positiveBtn != null) {
+                                positiveBtn.setEnabled(false);
+                            }
+                        }
                     }
                 });
                 editBtnsDialog.show();
@@ -138,7 +145,6 @@ public class AddLocationListPreference extends ListPreference {
         });
         editLocationDialog.show();
     }
-
 
     private void saveLocationData(String location) {
 
