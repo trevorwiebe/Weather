@@ -18,6 +18,7 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -51,8 +52,6 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-
-//public class MainActivity extends AppCompatActivity  {
 
 public class MainActivity extends AppCompatActivity implements LoadWeatherData.OnWeatherLoadFinished {
 
@@ -286,32 +285,59 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
 
             if (location == null) {
-                if (Geocoder.isPresent()) {
-                    try {
-                        Geocoder gc = new Geocoder(MainActivity.this);
-                        List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
+                final Handler handler = new Handler();
+                Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (Geocoder.isPresent()) {
+                            try {
+                                Geocoder gc = new Geocoder(MainActivity.this);
+                                List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
 
-                        if (addresses.size() == 0) {
-                            showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
-                            return;
-                        }
+                                if (addresses.size() == 0) {
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            determineIfTheSunIsUp(null, null);
+                                        }
+                                    });
+                                    return;
+                                }
 
-                        Address a = addresses.get(0);
+                                Address a = addresses.get(0);
 
-                        if (a.hasLatitude() && a.hasLongitude()) {
-                            String latitude = Double.toString(a.getLatitude());
-                            String longitude = Double.toString(a.getLongitude());
+                                if (a.hasLatitude() && a.hasLongitude()) {
+                                    String latitude = Double.toString(a.getLatitude());
+                                    String longitude = Double.toString(a.getLongitude());
 
-                            determineIfTheSunIsUp(latitude, longitude);
+                                    determineIfTheSunIsUp(latitude, longitude);
+                                } else {
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            determineIfTheSunIsUp(null, null);
+                                        }
+                                    });
+                                }
+                            } catch (IOException e) {
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        determineIfTheSunIsUp(null, null);
+                                    }
+                                });
+                            }
                         } else {
-                            showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    determineIfTheSunIsUp(null, null);
+                                }
+                            });
                         }
-                    } catch (IOException e) {
-                        showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
                     }
-                } else {
-                    showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
-                }
+                };
+                new Thread(runnable).start();
             } else {
                 String latitude = Double.toString(location.getLatitude());
                 String longitude = Double.toString(location.getLongitude());
@@ -324,6 +350,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     }
 
     private void determineIfTheSunIsUp(String latitude, String longitude) {
+
+        if (latitude == null || longitude == null) {
+            showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
+            return;
+        }
 
         String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
 
