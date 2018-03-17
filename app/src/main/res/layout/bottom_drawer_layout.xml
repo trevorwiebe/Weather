@@ -274,6 +274,7 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <ProgressBar
+        android:visibility="invisible"
         android:id="@+id/bottom_horizontal_pb"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"

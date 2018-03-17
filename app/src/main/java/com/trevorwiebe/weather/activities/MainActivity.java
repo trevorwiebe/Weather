@@ -124,7 +124,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mBottomSheetHorizontalPb.setScaleY(3f);
         mHorizontalPb.setScaleY(3f);
 
-        hideSubtleLoading();
 
         mCurrentColor = getIntent().getIntExtra("current_color", getResources().getColor(R.color.colorPrimary));
 
@@ -191,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             public void onLocationChanged(Location location) {
 
                 mLocationManager.removeUpdates(mLocationListener);
-                loadCurrentWeatherConditions(location);
+                loadWeatherDataStepTwo(location);
             }
 
             @Override
@@ -213,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     @Override
     protected void onResume() {
-        determineWhatTypeOfLocationAndBeginLoading();
+        loadWeatherDataStepOne();
         super.onResume();
     }
 
@@ -265,7 +264,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     public void refresh(View view) {
         mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         mWeatherMap.clear();
-        determineWhatTypeOfLocationAndBeginLoading();
+        loadWeatherDataStepOne();
     }
 
     @Override
@@ -277,144 +276,150 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         }
     }
 
-    private void loadCurrentWeatherConditions(@Nullable Location location) {
+    private void loadWeatherDataStepOne() {
 
-        final String selectedLocation = getCurrentLocationSetting();
-        String lastLoadedLocation = mWeatherMap.get("selectedLocation");
+        if (mWeatherMap.size() == 0 || mWeatherMap == null || !mWeatherMap.get("selectedLocation").equals(getCurrentLocationSetting())) {
+            showLoading("");
+            if (Utility.isConnectedToInternet(this)) {
+                String strLocation = getCurrentLocationSetting();
 
-        if (mWeatherMap.size() == 0 || mWeatherMap == null || !selectedLocation.equals(lastLoadedLocation)) {
-            showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
+                // need to get the current location of the device
+                if (strLocation.equals(getResources().getString(R.string.location_current_location_label))) {
 
-            if (location == null) {
-                final Handler handler = new Handler();
-                Runnable runnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        if (Geocoder.isPresent()) {
-                            try {
-                                Geocoder gc = new Geocoder(MainActivity.this);
-                                List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
+                    // check if the device has the locations turned on
+                    if (Utility.isLocationEnabled(this)) {
 
-                                if (addresses.size() == 0) {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            determineIfTheSunIsUp(null, null);
-                                        }
-                                    });
-                                    return;
-                                }
+                        // check if we have permission to access the location
+                        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                            if (mLocationManager != null) {
+                                showLoading(getResources().getString(R.string.loading_inform_requesting_location));
+                                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, mLocationListener);
+                            } else {
+                                showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
+                            }
+                        } else {
+                            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                                showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
+                            } else {
+                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_CODE);
+                            }
+                        }
+                    } else {
+                        showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
+                    }
 
-                                Address a = addresses.get(0);
+                } else {
+                    // since we don't need to get the location of the device, we will just pass null.  This will notify loadWeatherDataStepTwo to
+                    // use the a saved location instead
+                    loadWeatherDataStepTwo(null);
+                }
+            } else {
+                showErrorMessage(Utility.NO_INTERNET_CONNECTION);
+            }
+        } else {
+            putDataInViews();
+        }
+    }
 
-                                if (a.hasLatitude() && a.hasLongitude()) {
-                                    String latitude = Double.toString(a.getLatitude());
-                                    String longitude = Double.toString(a.getLongitude());
+    private void loadWeatherDataStepTwo(@Nullable Location location) {
 
-                                    determineIfTheSunIsUp(latitude, longitude);
-                                } else {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            determineIfTheSunIsUp(null, null);
-                                        }
-                                    });
-                                }
-                            } catch (IOException e) {
+        if (location == null) {
+            final Handler handler = new Handler();
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    if (Geocoder.isPresent()) {
+                        try {
+
+                            final String selectedLocation = getCurrentLocationSetting();
+
+                            Geocoder gc = new Geocoder(MainActivity.this);
+                            List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
+
+                            if (addresses.size() == 0) {
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        determineIfTheSunIsUp(null, null);
+                                        loadWeatherDataStepThree(null, null);
+                                    }
+                                });
+                                return;
+                            }
+
+                            Address a = addresses.get(0);
+
+                            if (a.hasLatitude() && a.hasLongitude()) {
+                                final String latitude = Double.toString(a.getLatitude());
+                                final String longitude = Double.toString(a.getLongitude());
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        loadWeatherDataStepThree(latitude, longitude);
+                                    }
+                                });
+                            } else {
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        loadWeatherDataStepThree(null, null);
                                     }
                                 });
                             }
-                        } else {
+                        } catch (IOException e) {
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    determineIfTheSunIsUp(null, null);
+                                    loadWeatherDataStepThree(null, null);
                                 }
                             });
                         }
-                    }
-                };
-                new Thread(runnable).start();
-            } else {
-                String latitude = Double.toString(location.getLatitude());
-                String longitude = Double.toString(location.getLongitude());
-                determineIfTheSunIsUp(latitude, longitude);
-            }
-        } else {
-            putDataInViews();
-        }
-
-    }
-
-    private void determineIfTheSunIsUp(String latitude, String longitude) {
-
-        if (latitude == null || longitude == null) {
-            showErrorMessage(Utility.LOCATION_NOT_RECOGNIZED);
-            return;
-        }
-
-        String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
-
-        com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
-        SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, TimeZone.getDefault());
-
-        Calendar calendar = Calendar.getInstance();
-
-        Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
-        Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
-
-        long sunsetMillis = officialSunset.getTimeInMillis();
-        long sunriseMillis = officialSunrise.getTimeInMillis();
-        long currentTime = calendar.getTimeInMillis();
-
-        isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
-
-        new LoadWeatherData(MainActivity.this).execute(url);
-
-    }
-
-    private void determineWhatTypeOfLocationAndBeginLoading() {
-        String location = getCurrentLocationSetting();
-        if (location.equals("Current Location")) {
-            determineLocation();
-        } else {
-            loadCurrentWeatherConditions(null);
-        }
-    }
-
-    public void determineLocation() {
-
-        if (mWeatherMap.size() == 0 || mWeatherMap == null || !mWeatherMap.get("selectedLocation").equals("Current Location")) {
-
-            showLoading(getResources().getString(R.string.loading_inform_requesting_location));
-
-            if (Utility.isLocationEnabled(this)) {
-                if (Utility.isConnectedToInternet(this)) {
-                    if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                        if (mLocationManager != null) {
-                            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, mLocationListener);
-                        }
                     } else {
-                        if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-                            showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
-                        } else {
-                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_CODE);
-                        }
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                loadWeatherDataStepThree(null, null);
+                            }
+                        });
                     }
-                } else {
-                    showErrorMessage(Utility.NO_INTERNET_CONNECTION);
                 }
-            } else {
-                showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
-            }
+            };
+            new Thread(runnable).start();
         } else {
-            putDataInViews();
-        }
+            String latitude = Double.toString(location.getLatitude());
+            String longitude = Double.toString(location.getLongitude());
 
+            loadWeatherDataStepThree(latitude, longitude);
+        }
+    }
+
+    private void loadWeatherDataStepThree(@Nullable String latitude, @Nullable String longitude) {
+
+        if (latitude != null || longitude != null) {
+
+            showLoading(getResources().getString(R.string.loading_inform_fetching_weather_info));
+
+            com.luckycatlabs.sunrisesunset.dto.Location sunriseSunsetLocation = new com.luckycatlabs.sunrisesunset.dto.Location(latitude, longitude);
+            SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(sunriseSunsetLocation, TimeZone.getDefault());
+
+            Calendar calendar = Calendar.getInstance();
+
+            Calendar officialSunrise = calculator.getOfficialSunriseCalendarForDate(calendar);
+            Calendar officialSunset = calculator.getOfficialSunsetCalendarForDate(calendar);
+
+            long sunsetMillis = officialSunset.getTimeInMillis();
+            long sunriseMillis = officialSunrise.getTimeInMillis();
+            long currentTime = calendar.getTimeInMillis();
+
+            isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
+
+            String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+
+            new LoadWeatherData(MainActivity.this).execute(url);
+
+        } else {
+            showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
+        }
     }
 
     private void parseData(String rawData) {
@@ -788,7 +793,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        determineWhatTypeOfLocationAndBeginLoading();
+                        loadWeatherDataStepOne();
 
                     }
                 };
@@ -818,7 +823,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        determineWhatTypeOfLocationAndBeginLoading();
+                        loadWeatherDataStepOne();
                     }
                 };
                 break;
@@ -827,7 +832,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        determineWhatTypeOfLocationAndBeginLoading();
+                        loadWeatherDataStepOne();
                     }
                 };
                 break;
@@ -847,7 +852,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        determineWhatTypeOfLocationAndBeginLoading();
+                        loadWeatherDataStepOne();
                     }
                 };
                 break;

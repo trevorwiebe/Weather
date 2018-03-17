@@ -77,6 +77,7 @@
     </LinearLayout>
 
     <ProgressBar
+        android:visibility="invisible"
         android:id="@+id/horizontal_pb"
         android:layout_width="match_parent"
         android:layout_height="7dp"
