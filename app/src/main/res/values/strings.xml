@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">Weather</string>
 
+    first time start up text
+    <string name="thanks_for_downloading">Thanks for downloading Simple Weather! Please select how you want Simple Weather to get your location</string>
+    <string name="current_location_btn">Use my current location</string>
+    <string name="set_a_location">No, I\'ll set my location</string>
 
     more information text
     <string name="more_information">More information</string>
@@ -25,9 +29,9 @@
     <string name="no_connection">No internet connection</string>
     <string name="no_data_returned">No weather information returned</string>
     <string name="data_returned_is_unknown">Data returned cannot be interpreted. It could be that the city you entered can\'t be found or the data returned is corrupted</string>
-    <string name="turn_on_location">Please turn on location so Simple Weather can function correctly.</string>
-    <string name="needs_permission">Simple Weather needs permission to access location. Your location is not stored and will only be used once when you first open the app to load the weather.</string>
-    <string name="failed_to_get_location">Cannot determine location. Please try again in a few minutes</string>
+    <string name="turn_on_location">You must turn on your location before Simple Weather can continue</string>
+    <string name="needs_permission">Simple Weather needs permission to access location. Your current location is not stored and will only be used once when you first open the app to load the weather.</string>
+    <string name="failed_to_get_location">Could not determine location</string>
     <string name="retry">Retry</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="open_location">Turn on location</string>
@@ -35,6 +39,7 @@
     <string name="location_not_found_btn_text">Set new location</string>
     <string name="update_settings">Update settings</string>
     <string name="no_saved_locations">No saved locations</string>
+    <string name="unknown_error">Unknown Error</string>
 
     settings
     <string name="unit_title">Units</string>
@@ -62,6 +67,7 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
 
+    <string name="pref_previously_started" translatable="false">pref_previously_started</string>
     loading info
     <string name="loading_inform_requesting_location">Getting the location of your device</string>
     <string name="loading_inform_fetching_weather_info">Fetching the weather information</string>

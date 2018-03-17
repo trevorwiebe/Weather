@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
     private LinearLayout mErrorLayout;
     private TextView mErrorTv;
     private Button mErrorBtn;
+    private Button mErrorBtn2;
     private ConstraintLayout mBottomSheet;
     private Button mMoreInfoBtn;
     private TextView mWind;
@@ -106,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mErrorLayout = findViewById(R.id.errors_layout);
         mErrorTv = findViewById(R.id.error_tv);
         mErrorBtn = findViewById(R.id.error_button);
+        mErrorBtn2 = findViewById(R.id.error_button_2);
         mBottomSheet = findViewById(R.id.bottom_sheet);
         mMoreInfoBtn = findViewById(R.id.more_information_btn);
 
@@ -278,46 +280,55 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     private void loadWeatherDataStepOne() {
 
-        if (mWeatherMap.size() == 0 || mWeatherMap == null || !mWeatherMap.get("selectedLocation").equals(getCurrentLocationSetting())) {
-            showLoading("");
-            if (Utility.isConnectedToInternet(this)) {
-                String strLocation = getCurrentLocationSetting();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+        boolean previouslyStarted = prefs.getBoolean(getString(R.string.pref_previously_started), false);
+        if (!previouslyStarted) {
+            SharedPreferences.Editor edit = prefs.edit();
+            edit.putBoolean(getString(R.string.pref_previously_started), Boolean.TRUE);
+            edit.apply();
+            showErrorMessage(Utility.FIRST_TIME_START_UP);
+        } else {
+            if (mWeatherMap.size() == 0 || mWeatherMap == null || !mWeatherMap.get("selectedLocation").equals(getCurrentLocationSetting())) {
+                showLoading("");
+                if (Utility.isConnectedToInternet(this)) {
+                    String strLocation = getCurrentLocationSetting();
 
-                // need to get the current location of the device
-                if (strLocation.equals(getResources().getString(R.string.location_current_location_label))) {
+                    // need to get the current location of the device
+                    if (strLocation.equals(getResources().getString(R.string.location_current_location_label))) {
 
-                    // check if the device has the locations turned on
-                    if (Utility.isLocationEnabled(this)) {
+                        // check if the device has the locations turned on
+                        if (Utility.isLocationEnabled(this)) {
 
-                        // check if we have permission to access the location
-                        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                            if (mLocationManager != null) {
-                                showLoading(getResources().getString(R.string.loading_inform_requesting_location));
-                                mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, mLocationListener);
+                            // check if we have permission to access the location
+                            if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                                if (mLocationManager != null) {
+                                    showLoading(getResources().getString(R.string.loading_inform_requesting_location));
+                                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, mLocationListener);
+                                } else {
+                                    showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
+                                }
                             } else {
-                                showErrorMessage(Utility.FAILED_TO_GET_LOCATION);
+                                if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                                    showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
+                                } else {
+                                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_CODE);
+                                }
                             }
                         } else {
-                            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-                                showErrorMessage(Utility.NEED_LOCATION_PERMISSION);
-                            } else {
-                                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_CODE);
-                            }
+                            showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
                         }
-                    } else {
-                        showErrorMessage(Utility.LOCATIONS_NOT_TURNED_ON);
-                    }
 
+                    } else {
+                        // since we don't need to get the location of the device, we will just pass null.  This will notify loadWeatherDataStepTwo to
+                        // use the a saved location instead
+                        loadWeatherDataStepTwo(null);
+                    }
                 } else {
-                    // since we don't need to get the location of the device, we will just pass null.  This will notify loadWeatherDataStepTwo to
-                    // use the a saved location instead
-                    loadWeatherDataStepTwo(null);
+                    showErrorMessage(Utility.NO_INTERNET_CONNECTION);
                 }
             } else {
-                showErrorMessage(Utility.NO_INTERNET_CONNECTION);
+                putDataInViews();
             }
-        } else {
-            putDataInViews();
         }
     }
 
@@ -520,7 +531,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             return;
         }
 
-        showContent();
+        showMainContent();
 
         String tempIdentifier;
         String distanceIdentifier;
@@ -767,15 +778,15 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mWeatherMap.clear();
         setBackgroundColors(false, getResources().getColor(R.color.colorPrimary));
 
-        mCurrentTemp.setVisibility(View.INVISIBLE);
-        mWeatherImage.setVisibility(View.INVISIBLE);
-        mCurrentCondition.setVisibility(View.INVISIBLE);
-        mLoadingLayout.setVisibility(View.INVISIBLE);
+        hideAllViews();
+        mErrorBtn2.setVisibility(View.INVISIBLE);
 
         View.OnClickListener errorBtnClickListener;
+        View.OnClickListener errorBtn2ClickListener;
 
         String errorMessage;
         String buttonText = getResources().getString(R.string.retry);
+        String buttonText2 = "";
         switch (errorCode) {
             case Utility.JSON_PARSING_FAILED:
                 errorMessage = getResources().getString(R.string.data_returned_is_unknown);
@@ -787,6 +798,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                         startActivity(setNewLocationIntent);
                     }
                 };
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                    }
+                };
                 break;
             case Utility.NO_DATA_RETURNED:
                 errorMessage = getResources().getString(R.string.no_data_returned);
@@ -794,6 +811,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                     @Override
                     public void onClick(View v) {
                         loadWeatherDataStepOne();
+
+                    }
+                };
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
 
                     }
                 };
@@ -807,6 +830,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                         startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     }
                 };
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                    }
+                };
                 break;
             case Utility.NEED_LOCATION_PERMISSION:
                 errorMessage = getResources().getString(R.string.needs_permission);
@@ -816,7 +845,16 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                         ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_CODE);
                     }
                 };
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
+                        startActivity(settingsIntent);
+                    }
+                };
                 buttonText = getResources().getString(R.string.grant_permission);
+                buttonText2 = getResources().getString(R.string.update_settings);
+                mErrorBtn2.setVisibility(View.VISIBLE);
                 break;
             case Utility.NO_INTERNET_CONNECTION:
                 errorMessage = getResources().getString(R.string.no_connection);
@@ -826,6 +864,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                         loadWeatherDataStepOne();
                     }
                 };
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                    }
+                };
                 break;
             case Utility.FAILED_TO_GET_LOCATION:
                 errorMessage = getResources().getString(R.string.failed_to_get_location);
@@ -833,6 +877,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                     @Override
                     public void onClick(View v) {
                         loadWeatherDataStepOne();
+                    }
+                };
+
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
                     }
                 };
                 break;
@@ -846,13 +897,48 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                         startActivity(setNewLocationIntent);
                     }
                 };
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
+                    }
+                };
                 break;
-            default:
-                errorMessage = "Unknown Error";
+
+            case Utility.FIRST_TIME_START_UP:
+                errorMessage = getResources().getString(R.string.thanks_for_downloading);
+
+                buttonText = getResources().getString(R.string.current_location_btn);
+                buttonText2 = getResources().getString(R.string.set_a_location);
+                mErrorBtn2.setVisibility(View.VISIBLE);
+
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         loadWeatherDataStepOne();
+                    }
+                };
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent settingsIntent = new Intent(MainActivity.this, SettingsActivity.class);
+                        startActivity(settingsIntent);
+                    }
+                };
+                break;
+            default:
+                errorMessage = getResources().getString(R.string.unknown_error);
+                errorBtnClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        loadWeatherDataStepOne();
+                    }
+                };
+
+                errorBtn2ClickListener = new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+
                     }
                 };
                 break;
@@ -862,9 +948,15 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mErrorTv.setText(errorMessage);
         mErrorBtn.setOnClickListener(errorBtnClickListener);
         mErrorBtn.setText(buttonText);
+
+        mErrorBtn2.setOnClickListener(errorBtn2ClickListener);
+        mErrorBtn2.setText(buttonText2);
     }
 
     private void showLoading(String loadingInform) {
+
+        hideAllViews();
+
         int color;
         if (getIntent().getExtras() == null) {
             color = getResources().getColor(R.color.colorPrimary);
@@ -873,32 +965,30 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         }
         setBackgroundColors(false, color);
         setTextColor(color);
-        mMoreInfoBtn.setVisibility(View.INVISIBLE);
-        mErrorLayout.setVisibility(View.INVISIBLE);
-        mCurrentTemp.setVisibility(View.INVISIBLE);
-        mWeatherImage.setVisibility(View.INVISIBLE);
-        mCurrentCondition.setVisibility(View.INVISIBLE);
         mLoadingLayout.setVisibility(View.VISIBLE);
         mLoadingInform.setText(loadingInform);
     }
 
-    private void showSubtleLoading() {
-        mHorizontalPb.setVisibility(View.VISIBLE);
-        mBottomSheetHorizontalPb.setVisibility(View.VISIBLE);
-    }
 
-    private void hideSubtleLoading() {
-        mHorizontalPb.setVisibility(View.INVISIBLE);
-        mBottomSheetHorizontalPb.setVisibility(View.INVISIBLE);
-    }
-
-    private void showContent() {
+    private void showMainContent() {
         mMoreInfoBtn.setVisibility(View.VISIBLE);
         mErrorLayout.setVisibility(View.INVISIBLE);
         mCurrentTemp.setVisibility(View.VISIBLE);
         mWeatherImage.setVisibility(View.VISIBLE);
         mCurrentCondition.setVisibility(View.VISIBLE);
         mLoadingLayout.setVisibility(View.INVISIBLE);
+    }
+
+    private void hideAllViews() {
+
+        mCurrentTemp.setVisibility(View.INVISIBLE);
+        mWeatherImage.setVisibility(View.INVISIBLE);
+        mCurrentCondition.setVisibility(View.INVISIBLE);
+        mLoadingLayout.setVisibility(View.INVISIBLE);
+        mHorizontalPb.setVisibility(View.INVISIBLE);
+        mBottomSheetHorizontalPb.setVisibility(View.INVISIBLE);
+        mErrorLayout.setVisibility(View.INVISIBLE);
+        mMoreInfoBtn.setVisibility(View.INVISIBLE);
     }
 
     private String getCurrentUnitSetting() {

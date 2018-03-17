@@ -22,15 +22,17 @@ public class Utility {
     public static final int FAILED_TO_GET_LOCATION = 5;
     public static final int LOCATION_NOT_RECOGNIZED = 6;
 
+    public static final int FIRST_TIME_START_UP = 7;
+
     // Unit settings strings
     public static final String AUTOMATIC = "Automatic";
     public static final String IMPERIAL = "Imperial";
     public static final String CELSIUS = "Metric";
 
     // Unit types that need to be converted
-    public static final int TEMPERATURE = 7;
-    public static final int DISTANCE = 8;
-    public static final int LENGTH = 9;
+    public static final int TEMPERATURE = 8;
+    public static final int DISTANCE = 9;
+    public static final int LENGTH = 10;
 
     // Check if is connected to the internet
     public static boolean isConnectedToInternet(Context context) {
