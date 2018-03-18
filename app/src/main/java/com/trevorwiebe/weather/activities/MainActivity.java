@@ -334,6 +334,8 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
     private void loadWeatherDataStepTwo(@Nullable Location location) {
 
+        final String selectedLocation = getCurrentLocationSetting();
+
         if (location == null) {
             final Handler handler = new Handler();
             Runnable runnable = new Runnable() {
@@ -342,16 +344,14 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                     if (Geocoder.isPresent()) {
                         try {
 
-                            final String selectedLocation = getCurrentLocationSetting();
-
                             Geocoder gc = new Geocoder(MainActivity.this);
-                            List<Address> addresses = gc.getFromLocationName(selectedLocation, 1); // get the found Address Objects
+                            List<Address> addresses = gc.getFromLocationName(selectedLocation, 1);
 
                             if (addresses.size() == 0) {
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        loadWeatherDataStepThree(null, null);
+                                        loadWeatherDataStepThree("38", "-97", selectedLocation);
                                     }
                                 });
                                 return;
@@ -366,22 +366,22 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        loadWeatherDataStepThree(latitude, longitude);
+                                        loadWeatherDataStepThree(latitude, longitude, selectedLocation);
                                     }
                                 });
                             } else {
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        loadWeatherDataStepThree(null, null);
+                                        loadWeatherDataStepThree("38", "-97", selectedLocation);
                                     }
                                 });
                             }
-                        } catch (IOException e) {
+                        } catch (final IOException e) {
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    loadWeatherDataStepThree(null, null);
+                                    loadWeatherDataStepThree("38", "-97", selectedLocation);
                                 }
                             });
                         }
@@ -389,7 +389,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                loadWeatherDataStepThree(null, null);
+                                loadWeatherDataStepThree("38", "-97", selectedLocation);
                             }
                         });
                     }
@@ -400,11 +400,12 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             String latitude = Double.toString(location.getLatitude());
             String longitude = Double.toString(location.getLongitude());
 
-            loadWeatherDataStepThree(latitude, longitude);
+            loadWeatherDataStepThree(latitude, longitude, selectedLocation);
         }
+
     }
 
-    private void loadWeatherDataStepThree(@Nullable String latitude, @Nullable String longitude) {
+    private void loadWeatherDataStepThree(String latitude, String longitude, String currentLocation) {
 
         if (latitude != null || longitude != null) {
 
@@ -424,7 +425,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
 
             isSunUp = sunriseMillis < currentTime && sunsetMillis > currentTime;
 
-            String url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+            String url;
+
+            if (currentLocation != null) {
+                url = Utility.BASE_URL + currentLocation + ".json";
+            } else {
+                url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+            }
 
             new LoadWeatherData(MainActivity.this).execute(url);
 
@@ -872,7 +879,7 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 };
                 break;
             case Utility.FAILED_TO_GET_LOCATION:
-                errorMessage = getResources().getString(R.string.failed_to_get_location);
+                errorMessage = getResources().getString(R.string.location_not_found);
                 errorBtnClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -883,9 +890,13 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
                 errorBtn2ClickListener = new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-
+                        Intent setNewLocationIntent = new Intent(MainActivity.this, SettingsActivity.class);
+                        startActivity(setNewLocationIntent);
                     }
                 };
+
+                buttonText2 = getResources().getString(R.string.update_settings);
+                mErrorBtn2.setVisibility(View.VISIBLE);
                 break;
             case Utility.LOCATION_NOT_RECOGNIZED:
                 errorMessage = getResources().getString(R.string.location_not_found);
@@ -968,7 +979,6 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
         mLoadingLayout.setVisibility(View.VISIBLE);
         mLoadingInform.setText(loadingInform);
     }
-
 
     private void showMainContent() {
         mMoreInfoBtn.setVisibility(View.VISIBLE);

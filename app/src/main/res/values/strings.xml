@@ -35,7 +35,7 @@
     <string name="retry">Retry</string>
     <string name="grant_permission">Grant Permission</string>
     <string name="open_location">Turn on location</string>
-    <string name="location_not_found">There were no cities that match your search</string>
+    <string name="location_not_found">There was an error. It could be that no cities match your search. Or if your internet connection was off and was just turned on, Simple Weather may need a little time to reinitialize before loading the weather</string>
     <string name="location_not_found_btn_text">Set new location</string>
     <string name="update_settings">Update settings</string>
     <string name="no_saved_locations">No saved locations</string>
