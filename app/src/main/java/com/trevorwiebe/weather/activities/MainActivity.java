@@ -428,7 +428,11 @@ public class MainActivity extends AppCompatActivity implements LoadWeatherData.O
             String url;
 
             if (currentLocation != null) {
-                url = Utility.BASE_URL + currentLocation + ".json";
+                if (!currentLocation.equals(getResources().getString(R.string.location_current_location_label))) {
+                    url = Utility.BASE_URL + currentLocation + ".json";
+                } else {
+                    url = Utility.BASE_URL + latitude + "," + longitude + ".json";
+                }
             } else {
                 url = Utility.BASE_URL + latitude + "," + longitude + ".json";
             }
